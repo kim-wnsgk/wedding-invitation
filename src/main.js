@@ -23,6 +23,29 @@ const dateEn = `${w.year}. ${pad(w.month)}. ${pad(w.day)} ${DOW_EN[dow]} ${hour1
 const couple = `${c.groom.firstName} ♥ ${c.bride.firstName}`;
 const fx = c.effects || {};
 
+// ---------- 사진 (photos/main, photos/gallery 폴더에 넣은 파일을 자동으로 불러옴) ----------
+// 빌드할 때 휴대폰에 맞는 크기로 줄이고 webp로 변환합니다.
+const byName = (mods) =>
+  Object.keys(mods)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((k) => mods[k]);
+const mainPhoto = byName(
+  import.meta.glob('/photos/main/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', {
+    eager: true, import: 'default', query: '?w=1080&format=webp&quality=82',
+  })
+)[0];
+const galleryFull = byName(
+  import.meta.glob('/photos/gallery/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', {
+    eager: true, import: 'default', query: '?w=1600&format=webp&quality=80',
+  })
+);
+const galleryThumb = byName(
+  import.meta.glob('/photos/gallery/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', {
+    eager: true, import: 'default', query: '?w=400&h=400&fit=cover&format=webp&quality=72',
+  })
+);
+const GALLERY_PREVIEW = 9; // 처음에 보여줄 사진 수 (나머지는 '더보기')
+
 // ---------- 메타 ----------
 document.title = c.meta.title;
 
@@ -57,8 +80,8 @@ $('#app').innerHTML = `
   <section class="hero">
     ${fx.snow ? '<canvas id="snow" aria-hidden="true"></canvas>' : ''}
     <div class="hero-in">
-      <div class="save">Save the Date</div>
-      ${seal('seal-hero')}
+      <div class="save">${esc(fx.eyebrow || 'The Wedding of')}</div>
+      ${mainPhoto ? `<div class="hero-photo"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high"></div>` : seal('seal-hero')}
       <div class="names">${esc(c.groom.englishName)}<span>&amp;</span>${esc(c.bride.englishName)}</div>
       <div class="ko">${esc(c.groom.name)} <i>·</i> ${esc(c.bride.name)}</div>
       <div class="date-en">${dateEn}</div>
@@ -72,10 +95,25 @@ $('#app').innerHTML = `
     <h2>${esc(c.greeting.title)}</h2>
     ${c.greeting.paragraphs.map((p) => `<p>${lines(p)}</p>`).join('')}
     <div class="parents">
-      <div>${esc(c.groom.father)} · ${esc(c.groom.mother)} <span class="rel">의 ${esc(c.groom.relation)}</span> <b>${esc(c.groom.firstName)}</b></div>
-      <div>${esc(c.bride.father)} · ${esc(c.bride.mother)} <span class="rel">의 ${esc(c.bride.relation)}</span> <b>${esc(c.bride.firstName)}</b></div>
+      <div>${esc(c.groom.father)} · ${esc(c.groom.mother)} <span class="rel">의 ${esc(c.groom.relation)}</span> <b>${esc(c.groom.name)}</b></div>
+      <div>${esc(c.bride.father)} · ${esc(c.bride.mother)} <span class="rel">의 ${esc(c.bride.relation)}</span> <b>${esc(c.bride.name)}</b></div>
     </div>
   </section>
+
+  ${
+    galleryThumb.length
+      ? `<section class="rv">
+    <div class="eyebrow">Gallery</div>
+    <h2>우리의 사진</h2>
+    <div class="gallery" id="gallery">
+      ${galleryThumb
+        .map((src, i) => `<button type="button" class="g-item${i >= GALLERY_PREVIEW ? ' g-hidden' : ''}" data-i="${i}" aria-label="사진 ${i + 1} 크게 보기"><img src="${src}" alt="" loading="lazy"></button>`)
+        .join('')}
+    </div>
+    ${galleryThumb.length > GALLERY_PREVIEW ? `<button class="btn g-more" type="button" id="gMore">사진 더보기</button>` : ''}
+  </section>`
+      : ''
+  }
 
   <section class="rv">
     <div class="eyebrow">Wedding Day</div>
@@ -126,6 +164,13 @@ $('#app').innerHTML = `
     </div>
   </section>
 </main>
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="사진 크게 보기">
+  <img id="lbImg" alt="">
+  <button class="lb-btn lb-close" type="button" id="lbClose" aria-label="닫기">&times;</button>
+  <button class="lb-btn lb-prev" type="button" id="lbPrev" aria-label="이전 사진">&#8249;</button>
+  <button class="lb-btn lb-next" type="button" id="lbNext" aria-label="다음 사진">&#8250;</button>
+  <div class="lb-count" id="lbCount"></div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 `;
 
@@ -237,6 +282,59 @@ setInterval(tick, 1000);
   requestAnimationFrame((t) => { last = t; frame(t); });
 })();
 
+// ---------- 갤러리 / 크게 보기 ----------
+(() => {
+  if (!galleryFull.length) return;
+  const lb = $('#lb'), img = $('#lbImg'), n = galleryFull.length;
+  let cur = 0, lastFocus = null;
+  const show = (i) => {
+    cur = (i + n) % n;
+    img.src = galleryFull[cur];
+    $('#lbCount').textContent = `${cur + 1} / ${n}`;
+    // 앞뒤 사진 미리 불러오기
+    [cur + 1, cur - 1].forEach((j) => { new Image().src = galleryFull[(j + n) % n]; });
+  };
+  const open = (i) => {
+    lastFocus = document.activeElement;
+    show(i);
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('#lbClose').focus();
+  };
+  const close = () => {
+    lb.hidden = true;
+    document.body.style.overflow = '';
+    lastFocus?.focus();
+  };
+  $('#gallery').addEventListener('click', (e) => {
+    const b = e.target.closest('.g-item');
+    if (b) open(Number(b.dataset.i));
+  });
+  $('#gMore')?.addEventListener('click', (e) => {
+    document.querySelectorAll('.g-hidden').forEach((el) => el.classList.remove('g-hidden'));
+    e.currentTarget.remove();
+  });
+  $('#lbClose').addEventListener('click', close);
+  $('#lbPrev').addEventListener('click', () => show(cur - 1));
+  $('#lbNext').addEventListener('click', () => show(cur + 1));
+  lb.addEventListener('click', (e) => { if (e.target === lb) close(); });
+  document.addEventListener('keydown', (e) => {
+    if (lb.hidden) return;
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowLeft') show(cur - 1);
+    else if (e.key === 'ArrowRight') show(cur + 1);
+  });
+  // 좌우로 밀어서 넘기기
+  let sx = null;
+  lb.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; }, { passive: true });
+  lb.addEventListener('touchend', (e) => {
+    if (sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    sx = null;
+    if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1));
+  });
+})();
+
 // ---------- 복사 ----------
 let timer;
 function toast(msg) {
@@ -268,9 +366,37 @@ document.querySelectorAll('[data-copy]').forEach((b) =>
   b.addEventListener('click', () => copy(b.dataset.copy, '계좌번호를 복사했어요'))
 );
 $('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 링크를 복사했어요'));
-// 휴대폰 공유창(카카오톡·문자 등)을 띄우고, 지원하지 않는 브라우저는 링크 복사로 대신
+// 공유하기: ① 카카오톡 공유(앱 키가 있을 때) → ② 휴대폰 공유창 → ③ 링크 복사
+// 카카오톡 안에서 열린 청첩장은 휴대폰 공유창을 지원하지 않아서 ①이 필요합니다.
+const kakaoKey = c.kakao?.jsKey;
+if (kakaoKey) {
+  const s = document.createElement('script');
+  s.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
+  s.integrity = 'sha384-DKYJZ8NLiK8MN4/C5P2dtSmLQ4KwPaoqAfyA/DfmEc1VDxu4yyC7wy6K1Hs90nka';
+  s.crossOrigin = 'anonymous';
+  s.onload = () => { if (!window.Kakao.isInitialized()) window.Kakao.init(kakaoKey); };
+  document.head.appendChild(s);
+}
+function kakaoShare(url) {
+  const K = window.Kakao;
+  if (!K?.isInitialized()) return false;
+  const link = { mobileWebUrl: url, webUrl: url };
+  const buttons = [{ title: '청첩장 보기', link }];
+  if (mainPhoto) {
+    K.Share.sendDefault({
+      objectType: 'feed',
+      content: { title: c.meta.title, description: c.meta.description, imageUrl: new URL(mainPhoto, location.href).href, link },
+      buttons,
+    });
+  } else {
+    K.Share.sendDefault({ objectType: 'text', text: `${c.meta.title}\n${c.meta.description}`, link, buttons });
+  }
+  return true;
+}
 $('#share').addEventListener('click', async () => {
-  const data = { title: c.meta.title, text: c.meta.description, url: location.href };
+  const url = location.origin + location.pathname;
+  if (kakaoShare(url)) return;
+  const data = { title: c.meta.title, text: c.meta.description, url };
   if (navigator.share) {
     try {
       await navigator.share(data);

@@ -82,13 +82,39 @@ npm run deploy
 
 > `npm run deploy`는 사이트만 올립니다. 소스 코드 변경 사항은 따로 `git add` → `git commit` → `git push` 해 주세요.
 
-## 6. 카카오톡 미리보기 사진 넣기 (선택)
+## 6. 사진 넣기
 
-1. 대표 사진을 `public/og-image.jpg`로 넣습니다. 가로 1200 × 세로 630px 정도를 권장합니다.
-2. `index.html`에서 주석 처리된 `og:image` 줄을 풀고, 배포된 주소로 바꿉니다.
-   예: `https://junha-jaeeun.netlify.app/og-image.jpg`
-3. 다시 빌드하고 배포합니다.
-4. 카카오톡에 예전 미리보기가 남아 있다면 [카카오 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에서 캐시를 초기화하세요.
+`photos/` 폴더에 사진 파일만 넣으면 됩니다. 원본을 그대로 넣어도 빌드할 때 휴대폰에 맞게 줄여 줍니다.
+
+| 폴더 | 쓰이는 곳 |
+| --- | --- |
+| `photos/main/` | 첫 화면 아치 액자 대표 사진 (이름순 첫 번째 1장) |
+| `photos/gallery/` | 갤러리 (이름순, `01.jpg`, `02.jpg` … 처럼 이름 붙이면 순서 지정) |
+| `photos/kakao/` | (선택) 카카오톡 미리보기 전용 가로 사진 |
+
+- jpg, jpeg, png, webp를 지원합니다. 아이폰 HEIC 사진은 jpg로 바꿔서 넣으세요.
+- 폴더가 비어 있으면 해당 부분은 화면에 나오지 않습니다.
+
+### 카카오톡 미리보기 사진
+
+링크를 보낼 때 보이는 미리보기 사진은 빌드할 때 자동으로 만들어집니다. `photos/main/` 사진을 1200×630으로 잘라 `og-image.jpg`로 저장합니다.
+
+- `photos/kakao/`에 사진이 있으면 그 사진을 대신 씁니다.
+- 주소는 `src/config.js`의 `siteUrl`로 만들어지니, 배포 주소가 바뀌면 그 값도 바꾸세요.
+- 카카오톡에 예전 미리보기가 남아 있다면 [카카오 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에서 캐시를 초기화하세요.
+
+## 7. 카카오톡 공유하기 버튼 (선택)
+
+카카오톡 안에서 열린 청첩장은 휴대폰 공유창을 지원하지 않습니다. 그래서 '공유하기'를 누르면 링크 복사만 됩니다. 카카오 앱 키를 넣으면 카카오톡 친구·단톡방을 바로 고르는 공유 화면이 뜹니다.
+
+1. https://developers.kakao.com 에 카카오 계정으로 로그인하고, **내 애플리케이션 → 애플리케이션 추가하기**로 앱을 만듭니다. 앱 이름은 아무거나 쓰면 됩니다.
+2. **앱 키**에서 **JavaScript 키**를 복사해 `src/config.js`의 `kakao.jsKey`에 붙여 넣습니다.
+3. **플랫폼 → Web**(또는 JavaScript SDK 도메인)에 아래 두 주소를 등록합니다.
+   - `https://kim-wnsgk.github.io` (배포 주소)
+   - `http://localhost:5173` (내 컴퓨터에서 확인용)
+4. 다시 배포합니다.
+
+앱 키가 비어 있으면 휴대폰 공유창이 뜨고, 그것도 안 되는 곳에서는 링크 복사로 동작합니다.
 
 ## 참고
 

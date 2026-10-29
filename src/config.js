@@ -6,6 +6,9 @@
 
 export const config = {
   // 브라우저 탭 / 카카오톡 공유 미리보기에 보이는 제목·설명
+  // 배포된 청첩장 주소 (끝에 / 포함) — 카카오톡 미리보기 사진 주소를 만들 때 씁니다
+  siteUrl: 'https://kim-wnsgk.github.io/wedding-invitation/',
+
   meta: {
     title: '준하 ♥ 재은 결혼합니다',
     description: '2027년 2월 20일 토요일 오후 3시, 수원 WI컨벤션 W홀',
@@ -69,8 +72,9 @@ export const config = {
     show: true,
     note: ['참석이 어려우신 분들을 위해 기재했습니다.', '너그러운 마음으로 양해 부탁드립니다.'],
     groom: [
-      { who: '신랑 김준하', bank: 'ABC은행', number: '123456789' },
-      // { who: '아버지 김경희', bank: '○○은행', number: '000-0000-0000' },
+      { who: '신랑 김준하', bank: '우리은행', number: '1002-358-192105' },
+      { who: '아버지 김경희', bank: '신한은행', number: '110-134-651499' },
+      { who: '어머니 이선애', bank: '농협은행', number: '1094-12-019067' },
     ],
     bride: [
       { who: '신부 이재은', bank: 'ABC은행', number: '123456789' },
@@ -79,8 +83,15 @@ export const config = {
 
   closing: '함께해 주셔서 감사합니다.',
 
+  // 카카오톡 공유하기 — https://developers.kakao.com 에서 앱을 만들고 'JavaScript 키'를 넣으세요.
+  // 비워 두면 휴대폰 공유창(지원 안 되면 링크 복사)으로 동작합니다. 자세한 방법은 README 참고.
+  kakao: {
+    jsKey: '',
+  },
+
   // 연출 효과
   effects: {
+    eyebrow: 'The Wedding of',  // 첫 화면 맨 위 영문 문구
     monogram: 'J&J',   // 첫 화면 왁스 실링에 새길 이니셜
     snow: true,        // 첫 화면에 눈 내리는 효과 (false 로 끄기)
   },
