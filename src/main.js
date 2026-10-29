@@ -144,10 +144,40 @@ $('#app').innerHTML = `
         : ''
     }
     <div class="parents">
-      <div>${esc(c.groom.father)} · ${esc(c.groom.mother)} <span class="rel">의 ${esc(c.groom.relation)}</span> <b>${esc(c.groom.name)}</b></div>
-      <div>${esc(c.bride.father)} · ${esc(c.bride.mother)} <span class="rel">의 ${esc(c.bride.relation)}</span> <b>${esc(c.bride.name)}</b></div>
+      <div><span class="pa">${esc(c.groom.father)} · ${esc(c.groom.mother)}</span><span class="rel">의 ${esc(c.groom.relation.trim())}</span><b>${esc(c.groom.name)}</b></div>
+      <div><span class="pa">${esc(c.bride.father)} · ${esc(c.bride.mother)}</span><span class="rel">의 ${esc(c.bride.relation.trim())}</span><b>${esc(c.bride.name)}</b></div>
     </div>
   </section>
+
+  ${
+    c.story?.lines?.length
+      ? // 스크롤하는 동안 화면에 고정된 채로, 양쪽에서 다가온 반지 두 개가 맞물림
+        `<section class="story" aria-label="${esc(c.story.lines.join(' '))}">
+    <div class="stage" id="stage">
+      <div class="story-text">${c.story.lines.map((l, i) => `<p class="st${i ? '' : ' on'}">${esc(l)}</p>`).join('')}</div>
+      <svg class="rings" viewBox="0 0 300 220" aria-hidden="true">
+        <defs>
+          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#E6CFA4"/><stop offset=".5" stop-color="#C79A62"/><stop offset="1" stop-color="#E2C493"/>
+          </linearGradient>
+          <radialGradient id="glow"><stop offset="0" stop-color="#FFE9C9" stop-opacity=".9"/><stop offset="1" stop-color="#FFE9C9" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle class="glow" cx="150" cy="118" r="90" fill="url(#glow)"/>
+        <path class="trail" id="trailA"/><path class="trail" id="trailB"/>
+        <g id="ringA"><ellipse class="r-out" rx="34" ry="29"/><ellipse class="r-shine" rx="34" ry="29" pathLength="100"/></g>
+        <g id="ringB"><ellipse class="r-out" rx="34" ry="29"/><ellipse class="r-shine" rx="34" ry="29" pathLength="100"/><path class="gem" d="M0-41 6.5-33 0-25-6.5-33Z"/></g>
+        <!-- 반지 A의 오른쪽 위 테두리를 B 위에 한 번 더 그려서 고리처럼 맞물려 보이게 -->
+        <g id="ringAOver"><path class="r-out" d="M5.9-28.6A34 29 0 0 1 33.5-5"/></g>
+        ${[[118, 70, 0], [186, 64, 120], [150, 44, 240], [96, 132, 360], [206, 140, 480]]
+          .map(([x, y, d]) => `<g transform="translate(${x} ${y})"><path class="sp" style="--d:${d}ms" d="M0-7 1.6-1.6 7 0 1.6 1.6 0 7-1.6 1.6-7 0-1.6-1.6Z"/></g>`)
+          .join('')}
+      </svg>
+      <div class="story-date">${w.year}. ${pad(w.month)}. ${pad(w.day)}</div>
+      <div class="story-hint">천천히 내려 보세요</div>
+    </div>
+  </section>`
+      : ''
+  }
 
   ${
     galleryThumb.length
@@ -263,7 +293,7 @@ $('#app').innerHTML = `
     const p = path.getPointAtLength((L * i) / n);
     const x = p.x.toFixed(1), y = p.y.toFixed(1);
     // 선이 그어지는 속도에 맞춰 차례로 등장
-    const st = `style="--t:${(0.15 + (2.1 * i) / n).toFixed(2)}s"`;
+    const st = `style="--t:${(0.1 + (1.15 * i) / n).toFixed(2)}s"`;
     if (i === 0) {
       h += `<g transform="translate(${x} ${y})"><g class="node" ${st}><circle r="4.2" class="dot"/>
         <text y="22" text-anchor="middle">${from}</text></g></g>`;
@@ -276,6 +306,46 @@ $('#app').innerHTML = `
     }
   }
   $('.since-nodes').innerHTML = h;
+})();
+
+// ---------- 반지 두 개가 만나는 장면: 이 구간을 스크롤한 만큼(0→1) 반지가 다가옴 ----------
+(() => {
+  const stage = $('#stage');
+  if (!stage) return;
+  const sec = stage.parentElement, texts = [...stage.querySelectorAll('.st')];
+  const A = $('#ringA'), B = $('#ringB'), AO = $('#ringAOver'), tA = $('#trailA'), tB = $('#trailB');
+  const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  // 반지 위치: 양 끝에서 출발해 살짝 떠올랐다가 가운데에서 겹침
+  const posA = (e) => [36 + (136 - 36) * e, 150 - Math.sin(e * Math.PI) * 42 - e * 32, -50 * (1 - e)];
+  const posB = (e) => [264 - (264 - 164) * e, 150 - Math.sin(e * Math.PI) * 30 - e * 32, 50 * (1 - e)];
+  const trail = (pos, e) => {
+    let d = '';
+    for (let k = 0; k <= 24; k++) {
+      const [x, y] = pos((e * k) / 24);
+      d += `${k ? 'L' : 'M'}${x.toFixed(1)} ${(y + 34).toFixed(1)}`;
+    }
+    return d;
+  };
+  let queued = false, shown = -1;
+  const update = () => {
+    queued = false;
+    const r = sec.getBoundingClientRect(), span = sec.offsetHeight - window.innerHeight;
+    const p = reduceMotion ? 1 : Math.min(1, Math.max(0, -r.top / (span || 1)));
+    const e = ease(Math.min(1, p / 0.88));
+    const [ax, ay, ar] = posA(e), [bx, by, br] = posB(e);
+    A.setAttribute('transform', `translate(${ax} ${ay}) rotate(${ar})`);
+    AO.setAttribute('transform', `translate(${ax} ${ay}) rotate(${ar})`);
+    B.setAttribute('transform', `translate(${bx} ${by}) rotate(${br})`);
+    tA.setAttribute('d', trail(posA, e));
+    tB.setAttribute('d', trail(posB, e));
+    const idx = Math.min(texts.length - 1, Math.floor(p * texts.length * 0.999));
+    if (idx !== shown) { texts.forEach((t, i) => t.classList.toggle('on', i === idx)); shown = idx; }
+    stage.classList.toggle('moved', p > 0.03);
+    stage.classList.toggle('done', p > 0.9);
+  };
+  window.addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
 })();
 
 // ---------- D-day ----------
@@ -315,16 +385,16 @@ setInterval(tick, 1000);
 //   / track 자간이 좁혀지며 / frost 성에 낀 듯 뿌옇다가 녹으며 선명 / lines 한 줄씩 차례로
 const REVEAL = [
   ['section:not(.hero) > .eyebrow', 'track'],
-  ['section:not(.hero) > h2', 'blur', () => 120],
-  ['.greet > p', 'lines', (i) => 150 + i * 120],
+  ['section:not(.hero) > h2', 'blur', () => 60],
+  ['.greet > p', 'lines', (i) => 60 + i * 70],
   ['.parents > div:first-child', 'left'],
-  ['.parents > div:last-child', 'right', () => 150],
-  ['.carousel', 'frost', () => 150],
+  ['.parents > div:last-child', 'right', () => 80],
+  ['.carousel', 'frost', () => 60],
   ['.g-nav, .since, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
-  ['.btn-row .btn', 'up', (i) => i * 90],
+  ['.btn-row .btn', 'up', (i) => i * 50],
   ['.map', 'zoom'],
-  ['.ways > div', 'left', (i) => i * 110],
-  ['details', 'up', (i) => i * 120],
+  ['.ways > div', 'left', (i) => i * 60],
+  ['details', 'up', (i) => i * 60],
 ];
 (() => {
   REVEAL.forEach(([sel, type, delay]) =>
@@ -344,10 +414,10 @@ const REVEAL = [
     if (el.id === 'dday') countUpDday();
     if (el.classList.contains('foot')) window.dispatchEvent(new Event('flurry'));
   };
-  // 화면 아래쪽 12% 위로 올라오면 등장
+  // 화면 아래쪽 5% 위로 올라오면 바로 등장
   const showIO = new IntersectionObserver(
     (entries) => entries.forEach((e) => e.isIntersecting && show(e.target)),
-    { rootMargin: '0px 0px -12% 0px' }
+    { rootMargin: '0px 0px -5% 0px' }
   );
   // 화면 밖으로 완전히 나가면 원래 상태로 되돌려서, 다시 스크롤할 때 또 재생
   const hideIO = new IntersectionObserver((entries) =>
@@ -371,7 +441,7 @@ function countUpDday() {
   const el = $('#ddayNum');
   if (!el || !daysLeft || ddayCounting) return;
   ddayCounting = true;
-  const t0 = performance.now(), dur = 1400;
+  const t0 = performance.now(), dur = 900;
   const step = (t) => {
     const p = Math.min((t - t0) / dur, 1);
     el.textContent = `${Math.round(daysLeft * (1 - Math.pow(1 - p, 3)))}일`;
