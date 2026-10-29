@@ -71,9 +71,16 @@ npm run preview   # 빌드 결과를 로컬에서 확인 (http://localhost:4173)
 
 ### C. GitHub Pages
 
-1. `npm run build`를 실행합니다.
-2. `dist` 폴더의 내용을 `gh-pages` 브랜치에 올립니다. `npx gh-pages -d dist` 한 줄이면 됩니다.
-3. 저장소의 Settings → Pages에서 Branch를 `gh-pages`로 지정합니다.
+```bash
+npm run deploy
+```
+
+이 한 줄이 빌드(`vite build`)를 하고 `dist` 폴더를 `gh-pages` 브랜치에 올립니다. 내용을 고칠 때마다 다시 실행하면 됩니다.
+
+처음 한 번만, 저장소의 Settings → Pages에서 Source는 `Deploy from a branch`, Branch는 `gh-pages` / `/(root)`로 지정하세요.
+주소는 `https://<아이디>.github.io/<저장소 이름>/` 입니다.
+
+> `npm run deploy`는 사이트만 올립니다. 소스 코드 변경 사항은 따로 `git add` → `git commit` → `git push` 해 주세요.
 
 ## 6. 카카오톡 미리보기 사진 넣기 (선택)
 

@@ -1,7 +1,8 @@
 /* 청첩장 스타일 — 색을 바꾸려면 :root 의 변수만 수정하세요 */
 :root{
-  --paper:#F3F1EC; --card:#FFFEFC; --ink:#2E2B38; --muted:#7D7886; --line:#E9E4E3;
+  --paper:#E8EDF1; --card:#FFFEFC; --ink:#2E2B38; --muted:#6F6B78; --line:#E6E5E8;
   --rose:#A8616E; --rose-soft:#F1E1E4; --sat:#4E6A9A;
+  --sky:#D9E3EB; --sky-soft:#EDF2F6;  /* 첫 화면·마지막 화면의 겨울 하늘빛 */
   --f-ko:"Gowun Batang","Noto Serif KR",serif;
   --f-en:"Cormorant Garamond","Times New Roman",serif;
   color-scheme:light;
@@ -21,23 +22,24 @@ section+section::before{content:"";position:absolute;top:-5px;left:50%;width:8px
 h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 
 /* hero */
-.hero{padding:64px 28px 72px;background:linear-gradient(180deg,var(--rose-soft) 0%,#F8EFF0 45%,var(--card) 100%);overflow:hidden}
-.hero::before,.hero::after{content:"";position:absolute;pointer-events:none;border:1px solid rgba(168,97,110,.28)}
+.hero{padding:64px 28px 72px;background:linear-gradient(180deg,var(--sky) 0%,var(--sky-soft) 50%,var(--card) 100%);overflow:hidden}
+.hero::before,.hero::after{content:"";position:absolute;pointer-events:none;border:1px solid rgba(255,255,255,.9)}
 .hero::before{inset:14px}
-.hero::after{inset:18px;border-color:rgba(168,97,110,.14)}
+.hero::after{inset:18px;border-color:rgba(168,97,110,.18)}
 #snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .hero-in{position:relative;z-index:1}
 .hero .save{font-family:var(--f-en);font-size:13px;letter-spacing:.42em;text-transform:uppercase;color:var(--rose)}
-.seal{display:block;margin:0 auto;filter:drop-shadow(0 3px 4px rgba(126,66,80,.28))}
-.seal text{font-family:var(--f-en);font-style:italic;font-size:30px;fill:rgba(255,255,255,.9);letter-spacing:.02em}
-.seal-hero{width:104px;margin-top:30px}
+.seal{display:block;margin:0 auto;overflow:visible}
+.seal circle{fill:none;stroke:var(--rose);stroke-width:1;opacity:.55}
+.seal text{font-family:var(--f-en);font-style:italic;font-size:34px;fill:var(--rose)}
+.seal-hero{width:76px;margin-top:26px}
 .hero .names{font-family:var(--f-en);font-style:italic;font-size:46px;line-height:1.1;margin:26px 0 8px;color:var(--ink)}
 .hero .names span{display:block;font-style:normal;font-size:22px;color:var(--rose);margin:6px 0}
 .hero .ko{font-size:17px;letter-spacing:.12em;margin-top:18px}
 .hero .ko i{font-style:normal;color:var(--rose);margin:0 4px}
-.hero .date-en{margin-top:28px;font-family:var(--f-en);font-size:15px;letter-spacing:.2em;color:var(--ink)}
+.hero .date-en{margin-top:28px;font-family:var(--f-en);font-size:16px;font-weight:500;letter-spacing:.18em;color:var(--ink)}
 .hero .date-en::before,.hero .date-en::after{content:"";display:block;width:28px;height:1px;background:var(--rose);opacity:.5;margin:10px auto}
-.hero .when{margin-top:6px;font-size:14px;color:var(--muted);line-height:1.7}
+.hero .when{margin-top:6px;font-size:15px;color:var(--ink);line-height:1.75;text-shadow:0 0 12px var(--card)}
 .scroll-cue{position:absolute;left:50%;bottom:26px;width:1px;height:28px;background:rgba(168,97,110,.2);transform:translateX(-50%);overflow:hidden}
 .scroll-cue span{position:absolute;left:0;top:-50%;width:1px;height:50%;background:var(--rose);animation:cue 2.2s ease-in-out infinite}
 @keyframes cue{to{top:100%}}
@@ -50,7 +52,7 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 .hero-in .ko{animation-delay:.9s}
 .hero-in .date-en{animation-delay:1.1s}
 .hero-in .when{animation-delay:1.25s}
-@keyframes stamp{from{opacity:0;transform:scale(1.35) rotate(-8deg)}to{opacity:1;transform:none}}
+@keyframes stamp{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
 @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 /* 스크롤 등장 */
@@ -113,11 +115,14 @@ details[open] summary::after{content:"−"}
 .acct .btn{flex:none;padding:6px 12px;font-size:12px}
 .note{color:var(--muted);font-size:13px;margin-bottom:20px}
 
-.foot{padding:48px 28px 52px;font-size:13px;color:var(--muted);background:linear-gradient(180deg,var(--card),var(--rose-soft))}
-.seal-foot{width:56px;margin-bottom:14px}
-.seal-foot text{font-size:32px}
+.foot{padding:48px 28px 52px;font-size:13px;color:var(--muted);background:linear-gradient(180deg,var(--card),var(--sky-soft))}
+.seal-foot{width:40px;margin-bottom:12px}
 .foot .sign{font-family:var(--f-en);font-style:italic;font-size:24px;color:var(--ink);line-height:1.3;margin-bottom:6px}
-.foot .btn{margin-top:14px;padding:10px 22px}
+.share-row{display:flex;justify-content:center;gap:4px;margin-top:18px}
+.link-btn{font:inherit;font-size:13px;color:var(--ink);background:none;border:0;padding:6px 12px;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(168,97,110,.4);text-underline-offset:5px}
+.link-btn+.link-btn{border-left:1px solid var(--line)}
+.link-btn:hover{color:var(--rose)}
+.link-btn:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
 
 
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;opacity:0;transition:.25s;pointer-events:none}

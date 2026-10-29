@@ -26,27 +26,12 @@ const fx = c.effects || {};
 // ---------- 메타 ----------
 document.title = c.meta.title;
 
-// ---------- 왁스 실링 ----------
-let sealId = 0;
+// ---------- 모노그램 (가는 선 원 + 이니셜) ----------
 function seal(cls) {
-  const id = `seal${++sealId}`;
-  // 가장자리가 살짝 울퉁불퉁한 원 (녹은 왁스 느낌)
-  const pts = [];
-  for (let i = 0; i < 120; i++) {
-    const a = (i / 120) * Math.PI * 2;
-    const r = 52 + 2.4 * Math.sin(a * 9) + 1.4 * Math.sin(a * 4 + 1.3) + 0.8 * Math.sin(a * 17);
-    pts.push(`${(60 + r * Math.cos(a)).toFixed(1)},${(60 + r * Math.sin(a)).toFixed(1)}`);
-  }
   return `<svg class="seal ${cls}" viewBox="0 0 120 120" aria-hidden="true">
-    <defs>
-      <radialGradient id="${id}g" cx="38%" cy="32%" r="75%">
-        <stop offset="0" stop-color="#C98B97"/><stop offset=".55" stop-color="#A8616E"/><stop offset="1" stop-color="#7E4250"/>
-      </radialGradient>
-    </defs>
-    <polygon points="${pts.join(' ')}" fill="url(#${id}g)"/>
-    <circle cx="60" cy="60" r="38" fill="none" stroke="rgba(0,0,0,.14)" stroke-width="2.5"/>
-    <circle cx="60" cy="60" r="36" fill="none" stroke="rgba(255,255,255,.32)" stroke-width="1"/>
-    <text x="60" y="61" text-anchor="middle" dominant-baseline="middle">${esc(fx.monogram || `${c.groom.englishName[0]}&${c.bride.englishName[0]}`)}</text>
+    <circle cx="60" cy="60" r="54" stroke-dasharray="1 5" stroke-linecap="round"/>
+    <circle cx="60" cy="60" r="46"/>
+    <text x="60" y="62" text-anchor="middle" dominant-baseline="middle">${esc(fx.monogram || `${c.groom.englishName[0]}&${c.bride.englishName[0]}`)}</text>
   </svg>`;
 }
 
@@ -134,8 +119,11 @@ $('#app').innerHTML = `
   <section class="foot rv">
     ${seal('seal-foot')}
     <div class="sign">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</div>
-    ${esc(c.closing)}<br>
-    <button class="btn" type="button" id="share">청첩장 링크 복사</button>
+    ${esc(c.closing)}
+    <div class="share-row">
+      <button class="link-btn" type="button" id="share">공유하기</button>
+      <button class="link-btn" type="button" id="copyLink">링크 복사</button>
+    </div>
   </section>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -234,7 +222,7 @@ setInterval(tick, 1000);
       ctx.fillStyle = `rgba(255,255,255,${a})`;
       ctx.fill();
       ctx.lineWidth = 0.6;
-      ctx.strokeStyle = `rgba(168,97,110,${a * 0.22})`;
+      ctx.strokeStyle = `rgba(92,116,140,${a * 0.2})`;
       ctx.stroke();
     }
     if (visible) requestAnimationFrame(frame);
@@ -279,7 +267,20 @@ $('#copyAddr').addEventListener('click', () => copy(c.venue.address, '주소를 
 document.querySelectorAll('[data-copy]').forEach((b) =>
   b.addEventListener('click', () => copy(b.dataset.copy, '계좌번호를 복사했어요'))
 );
-$('#share').addEventListener('click', () => copy(location.href, '청첩장 링크를 복사했어요'));
+$('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 링크를 복사했어요'));
+// 휴대폰 공유창(카카오톡·문자 등)을 띄우고, 지원하지 않는 브라우저는 링크 복사로 대신
+$('#share').addEventListener('click', async () => {
+  const data = { title: c.meta.title, text: c.meta.description, url: location.href };
+  if (navigator.share) {
+    try {
+      await navigator.share(data);
+    } catch (e) {
+      if (e.name !== 'AbortError') copy(location.href, '청첩장 링크를 복사했어요');
+    }
+  } else {
+    copy(location.href, '청첩장 링크를 복사했어요');
+  }
+});
 
 // ---------- 캘린더 저장 (.ics) ----------
 $('#ics').addEventListener('click', () => {
