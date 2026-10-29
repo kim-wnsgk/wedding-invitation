@@ -1,5 +1,6 @@
 import './style.css';
 import { config as c } from './config.js';
+import { groom, bride, cat } from './characters.js';
 
 // ---------- 유틸 ----------
 const $ = (sel) => document.querySelector(sel);
@@ -150,36 +151,6 @@ $('#app').innerHTML = `
   </section>
 
   ${
-    c.story?.lines?.length
-      ? // 스크롤하는 동안 화면에 고정된 채로, 양쪽에서 다가온 반지 두 개가 맞물림
-        `<section class="story" aria-label="${esc(c.story.lines.join(' '))}">
-    <div class="stage" id="stage">
-      <div class="story-text">${c.story.lines.map((l, i) => `<p class="st${i ? '' : ' on'}">${esc(l)}</p>`).join('')}</div>
-      <svg class="rings" viewBox="0 0 300 220" aria-hidden="true">
-        <defs>
-          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#E6CFA4"/><stop offset=".5" stop-color="#C79A62"/><stop offset="1" stop-color="#E2C493"/>
-          </linearGradient>
-          <radialGradient id="glow"><stop offset="0" stop-color="#FFE9C9" stop-opacity=".9"/><stop offset="1" stop-color="#FFE9C9" stop-opacity="0"/></radialGradient>
-        </defs>
-        <circle class="glow" cx="150" cy="118" r="90" fill="url(#glow)"/>
-        <path class="trail" id="trailA"/><path class="trail" id="trailB"/>
-        <g id="ringA"><ellipse class="r-out" rx="34" ry="29"/><ellipse class="r-shine" rx="34" ry="29" pathLength="100"/></g>
-        <g id="ringB"><ellipse class="r-out" rx="34" ry="29"/><ellipse class="r-shine" rx="34" ry="29" pathLength="100"/><path class="gem" d="M0-41 6.5-33 0-25-6.5-33Z"/></g>
-        <!-- 반지 A의 오른쪽 위 테두리를 B 위에 한 번 더 그려서 고리처럼 맞물려 보이게 -->
-        <g id="ringAOver"><path class="r-out" d="M5.9-28.6A34 29 0 0 1 33.5-5"/></g>
-        ${[[118, 70, 0], [186, 64, 120], [150, 44, 240], [96, 132, 360], [206, 140, 480]]
-          .map(([x, y, d]) => `<g transform="translate(${x} ${y})"><path class="sp" style="--d:${d}ms" d="M0-7 1.6-1.6 7 0 1.6 1.6 0 7-1.6 1.6-7 0-1.6-1.6Z"/></g>`)
-          .join('')}
-      </svg>
-      <div class="story-date">${w.year}. ${pad(w.month)}. ${pad(w.day)}</div>
-      <div class="story-hint">천천히 내려 보세요</div>
-    </div>
-  </section>`
-      : ''
-  }
-
-  ${
     galleryThumb.length
       ? `<section class="rv">
     <div class="eyebrow">Gallery</div>
@@ -192,6 +163,7 @@ $('#app').innerHTML = `
         .join('')}
     </div>
     <div class="g-nav">
+      ${cat('yellowSpot1', 'cat-gal')}
       <button type="button" id="gPrev" aria-label="이전 사진">&#8249;</button>
       <span id="gCount">1 / ${galleryThumb.length}</span>
       <button type="button" id="gNext" aria-label="다음 사진">&#8250;</button>
@@ -203,7 +175,7 @@ $('#app').innerHTML = `
   <section class="rv">
     <div class="eyebrow">Wedding Day</div>
     <h2>${dateKo}</h2>
-    <div class="cal-head"><span>${w.year}</span>${w.month}월</div>
+    <div class="cal-head"><span>${w.year}</span>${w.month}월${cat('black', 'cat-cal')}</div>
     <div class="cal" id="cal"></div>
     <div class="dday" id="dday"></div>
     <div class="count" id="count"></div>
@@ -215,8 +187,11 @@ $('#app').innerHTML = `
     <div class="venue">${esc(c.venue.name)}</div>
     <div class="addr">${esc(c.venue.address)}</div>
     <div class="addr">${esc(c.venue.detail)}${c.venue.tel ? ` · Tel. ${esc(c.venue.tel)}` : ''}</div>
+    <div class="map-wrap">
+    ${cat('cheeseTabby', 'cat-peek')}
     <div class="map">
       <iframe src="https://maps.google.com/maps?q=${encodeURIComponent(c.venue.address)}&z=16&output=embed" title="${esc(c.venue.name)} 지도" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
     </div>
     <button class="btn copy-addr" type="button" id="copyAddr">주소 복사</button>
     <div class="btn-row">
@@ -232,6 +207,7 @@ $('#app').innerHTML = `
   ${
     c.accounts.show
       ? `<section class="rv">
+    ${cat('cow', 'cat-acct')}
     <div class="eyebrow">With Heart</div>
     <h2>마음 전하실 곳</h2>
     <div class="note">${lines(c.accounts.note)}</div>
@@ -242,7 +218,13 @@ $('#app').innerHTML = `
   }
 
   <section class="foot rv">
-    ${seal('seal-foot')}
+    <div class="family" aria-label="${esc(c.groom.firstName)}, ${esc(c.bride.firstName)} 그리고 고양이 여덟 마리">
+      <div class="couple">${groom()}<span class="fam-heart" aria-hidden="true">♥</span>${bride()}</div>
+      <div class="cats-row">
+        ${['whiteLong', 'tortie', 'cheeseTabby'].map((k) => cat(k)).join('')}<i class="gap"></i>${['yellowSpot1', 'yellowSpot2', 'calico', 'cow', 'black'].map((k) => cat(k)).join('')}
+      </div>
+      <div class="fam-cap">${esc(c.groom.firstName)} · ${esc(c.bride.firstName)} 그리고 고양이 여덟</div>
+    </div>
     <div class="sign">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</div>
     ${esc(c.closing)}
     <div class="share-row">
@@ -308,46 +290,6 @@ $('#app').innerHTML = `
   $('.since-nodes').innerHTML = h;
 })();
 
-// ---------- 반지 두 개가 만나는 장면: 이 구간을 스크롤한 만큼(0→1) 반지가 다가옴 ----------
-(() => {
-  const stage = $('#stage');
-  if (!stage) return;
-  const sec = stage.parentElement, texts = [...stage.querySelectorAll('.st')];
-  const A = $('#ringA'), B = $('#ringB'), AO = $('#ringAOver'), tA = $('#trailA'), tB = $('#trailB');
-  const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-  // 반지 위치: 양 끝에서 출발해 살짝 떠올랐다가 가운데에서 겹침
-  const posA = (e) => [36 + (136 - 36) * e, 150 - Math.sin(e * Math.PI) * 42 - e * 32, -50 * (1 - e)];
-  const posB = (e) => [264 - (264 - 164) * e, 150 - Math.sin(e * Math.PI) * 30 - e * 32, 50 * (1 - e)];
-  const trail = (pos, e) => {
-    let d = '';
-    for (let k = 0; k <= 24; k++) {
-      const [x, y] = pos((e * k) / 24);
-      d += `${k ? 'L' : 'M'}${x.toFixed(1)} ${(y + 34).toFixed(1)}`;
-    }
-    return d;
-  };
-  let queued = false, shown = -1;
-  const update = () => {
-    queued = false;
-    const r = sec.getBoundingClientRect(), span = sec.offsetHeight - window.innerHeight;
-    const p = reduceMotion ? 1 : Math.min(1, Math.max(0, -r.top / (span || 1)));
-    const e = ease(Math.min(1, p / 0.88));
-    const [ax, ay, ar] = posA(e), [bx, by, br] = posB(e);
-    A.setAttribute('transform', `translate(${ax} ${ay}) rotate(${ar})`);
-    AO.setAttribute('transform', `translate(${ax} ${ay}) rotate(${ar})`);
-    B.setAttribute('transform', `translate(${bx} ${by}) rotate(${br})`);
-    tA.setAttribute('d', trail(posA, e));
-    tB.setAttribute('d', trail(posB, e));
-    const idx = Math.min(texts.length - 1, Math.floor(p * texts.length * 0.999));
-    if (idx !== shown) { texts.forEach((t, i) => t.classList.toggle('on', i === idx)); shown = idx; }
-    stage.classList.toggle('moved', p > 0.03);
-    stage.classList.toggle('done', p > 0.9);
-  };
-  window.addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
-  window.addEventListener('resize', update);
-  update();
-})();
-
 // ---------- D-day ----------
 $('#dday').innerHTML = `${esc(couple)}의 결혼식이 <strong id="ddayNum"></strong> 남았습니다`;
 $('#count').innerHTML = ['Days', 'Hours', 'Mins', 'Secs'].map((l) => `<div><b></b><small>${l}</small></div>`).join('');
@@ -390,7 +332,7 @@ const REVEAL = [
   ['.parents > div:first-child', 'left'],
   ['.parents > div:last-child', 'right', () => 80],
   ['.carousel', 'frost', () => 60],
-  ['.g-nav, .since, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
+  ['.family, .g-nav, .since, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
   ['.btn-row .btn', 'up', (i) => i * 50],
   ['.map', 'zoom'],
   ['.ways > div', 'left', (i) => i * 60],
@@ -451,24 +393,43 @@ function countUpDday() {
   requestAnimationFrame(step);
 }
 
-// ---------- 스크롤 진행 막대 · 대표 사진 패럴랙스 ----------
+// ---------- 맨 위 스크롤 막대: 신랑(왼쪽)과 신부(오른쪽)가 고양이와 함께 걸어와 맨 끝에서 만남 · 대표 사진 패럴랙스 ----------
 (() => {
-  if (reduceMotion) return;
   const bar = document.createElement('div');
-  bar.className = 'progress';
+  bar.className = 'walk';
+  bar.setAttribute('aria-hidden', 'true');
+  bar.innerHTML = `<i class="walk-fill walk-fill-l"></i><i class="walk-fill walk-fill-r"></i>
+    <div class="walker w-g">${cat('cheeseTabby', 'w-cat')}${groom()}</div>
+    <div class="walker w-b">${bride()}${cat('calico', 'w-cat')}</div>
+    <span class="walk-heart">♥</span>`;
   document.body.appendChild(bar);
-  const photo = $('.cover img');
-  let queued = false;
+  const wg = bar.querySelector('.w-g'), wb = bar.querySelector('.w-b');
+  const fl = bar.querySelector('.walk-fill-l'), fr = bar.querySelector('.walk-fill-r');
+  const photo = reduceMotion ? null : $('.cover img');
+  let queued = false, stop;
   const update = () => {
     queued = false;
     const y = window.scrollY, max = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.transform = `scaleX(${max > 0 ? Math.min(y / max, 1) : 0})`;
+    const p = max > 0 ? Math.min(y / max, 1) : 0;
+    // 각자 출발점에서 화면 가운데까지 걸어감
+    const reach = bar.clientWidth / 2 - wg.offsetWidth - 12;
+    wg.style.transform = `translateX(${(p * reach).toFixed(1)}px)`;
+    wb.style.transform = `translateX(${(-p * reach).toFixed(1)}px)`;
+    fl.style.transform = fr.style.transform = `scaleX(${p.toFixed(3)})`;
+    bar.classList.toggle('met', p > 0.985);
     // 사진이 액자 안에서 스크롤보다 천천히 움직임
     if (photo && y < window.innerHeight * 1.5) photo.style.translate = `0 ${-Math.min(y * 0.12, 52)}px`;
   };
   window.addEventListener('scroll', () => {
     if (!queued) { queued = true; requestAnimationFrame(update); }
+    // 스크롤하는 동안만 다리를 움직여 걷기
+    if (!reduceMotion) {
+      bar.classList.add('walking');
+      clearTimeout(stop);
+      stop = setTimeout(() => bar.classList.remove('walking'), 160);
+    }
   }, { passive: true });
+  window.addEventListener('resize', update);
   update();
 })();
 
