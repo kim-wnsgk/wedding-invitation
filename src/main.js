@@ -129,7 +129,6 @@ $('#app').innerHTML = `
     <div class="cal" id="cal"></div>
     <div class="dday" id="dday"></div>
     <div class="count" id="count"></div>
-    <button class="btn ics" type="button" id="ics">내 캘린더에 저장</button>
   </section>
 
   <section class="rv">
@@ -240,7 +239,7 @@ const REVEAL = [
   ['.parents > div:first-child', 'left'],
   ['.parents > div:last-child', 'right', () => 150],
   ['.g-item', 'zoom', (i) => (i % 3) * 90],
-  ['.g-more, .cal-head, .dday, .count, .ics, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
+  ['.g-more, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
   ['.btn-row .btn', 'up', (i) => i * 90],
   ['.ways > div', 'left', (i) => i * 110],
   ['details', 'up', (i) => i * 120],
@@ -257,33 +256,37 @@ const REVEAL = [
     els.forEach((el) => el.classList.add('in'));
     return;
   }
-  const io = new IntersectionObserver(
-    (entries) => entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      e.target.classList.add('in');
-      io.unobserve(e.target);
-      if (e.target.id === 'dday') countUpDday();
-    }),
+  const show = (el) => {
+    if (el.classList.contains('in')) return;
+    el.classList.add('in');
+    if (el.id === 'dday') countUpDday();
+  };
+  // 화면 아래쪽 12% 위로 올라오면 등장
+  const showIO = new IntersectionObserver(
+    (entries) => entries.forEach((e) => e.isIntersecting && show(e.target)),
     { rootMargin: '0px 0px -12% 0px' }
   );
-  els.forEach((el) => io.observe(el));
-  // 맨 아래 요소는 화면 안쪽 기준선까지 올라오지 못하므로, 끝까지 내리면 남은 것을 모두 등장시킴
-  const atBottom = () => {
+  // 화면 밖으로 완전히 나가면 원래 상태로 되돌려서, 다시 스크롤할 때 또 재생
+  const hideIO = new IntersectionObserver((entries) =>
+    entries.forEach((e) => !e.isIntersecting && e.target.classList.remove('in'))
+  );
+  els.forEach((el) => { showIO.observe(el); hideIO.observe(el); });
+  // 맨 아래 요소는 화면 안쪽 기준선까지 올라오지 못하므로, 끝까지 내리면 보이는 것을 모두 등장시킴
+  window.addEventListener('scroll', () => {
     if (window.innerHeight + window.scrollY < document.documentElement.scrollHeight - 4) return;
-    els.forEach((el) => {
-      if (!el.classList.contains('in') && el.getBoundingClientRect().top < window.innerHeight) {
-        el.classList.add('in');
-        io.unobserve(el);
-      }
-    });
-  };
-  window.addEventListener('scroll', atBottom, { passive: true });
+    els.forEach((el) => el.getBoundingClientRect().top < window.innerHeight && show(el));
+  }, { passive: true });
+
+  // 첫 화면 애니메이션도 화면 밖으로 나갔다 돌아오면 다시 재생
+  const hero = $('.hero');
+  hero.classList.add('play');
+  new IntersectionObserver(([e]) => hero.classList.toggle('play', e.isIntersecting)).observe(hero);
 })();
 
 // D-day 숫자가 0부터 빠르게 올라감
 function countUpDday() {
   const el = $('#ddayNum');
-  if (!el || !daysLeft) return;
+  if (!el || !daysLeft || ddayCounting) return;
   ddayCounting = true;
   const t0 = performance.now(), dur = 1400;
   const step = (t) => {
@@ -495,26 +498,4 @@ $('#share').addEventListener('click', async () => {
   } else {
     copy(location.href, '청첩장 링크를 복사했어요');
   }
-});
-
-// ---------- 캘린더 저장 (.ics) ----------
-$('#ics').addEventListener('click', () => {
-  const stamp = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  const icsText = (s) => String(s).replace(/[\\,;]/g, (m) => `\\${m}`);
-  const end = new Date(WED.getTime() + 2 * 3600 * 1000);
-  const ics = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//wedding-invitation//KO', 'BEGIN:VEVENT',
-    `UID:${stamp(WED)}-wedding@invitation`, `DTSTAMP:${stamp(new Date())}`,
-    `DTSTART:${stamp(WED)}`, `DTEND:${stamp(end)}`,
-    `SUMMARY:${icsText(`${couple} 결혼식`)}`,
-    `LOCATION:${icsText(`${c.venue.name}, ${c.venue.address}`)}`,
-    'END:VEVENT', 'END:VCALENDAR',
-  ].join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
-  a.download = 'wedding.ics';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
