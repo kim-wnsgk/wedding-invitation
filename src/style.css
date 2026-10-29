@@ -13,11 +13,16 @@ body{background-color:var(--paper);color:var(--ink);font-family:var(--f-ko);font
   /* 은은한 종이 질감 */
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .25 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+/* 휴대폰에서는 좌우 여백 없이 화면 가득 */
+@media (max-width:480px){
+  body{padding:0}
+  .wrap{border-radius:0!important;box-shadow:none!important}
+}
 .wrap{max-width:440px;margin:0 auto;background:var(--card);border-radius:4px;box-shadow:0 1px 2px rgba(46,43,56,.04),0 12px 40px rgba(46,43,56,.07);overflow:hidden}
 section{position:relative;padding:60px 28px;text-align:center;border-top:1px solid var(--line)}
 section:first-child{border-top:0}
-/* 섹션 사이 작은 마름모 장식 */
-section+section::before{content:"";position:absolute;top:-5px;left:50%;width:8px;height:8px;background:var(--card);border:1px solid var(--rose);transform:translateX(-50%) rotate(45deg);opacity:.7}
+/* 섹션 사이 작은 눈송이 장식 */
+section+section::before{content:"";position:absolute;top:-10px;left:50%;width:20px;height:20px;border-radius:50%;background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0-9V9M-7.8-4.5 7.8 4.5M-7.8 4.5 7.8-4.5M0-5.5l2.4-2M0-5.5l-2.4-2M0 5.5l2.4 2M0 5.5l-2.4 2' fill='none' stroke='%23A8616E' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E") center/14px no-repeat;transform:translateX(-50%)}
 .eyebrow{font-family:var(--f-en);font-size:12px;font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--rose)}
 h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 
@@ -26,16 +31,19 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 .hero::before,.hero::after{content:"";position:absolute;pointer-events:none;border:1px solid rgba(255,255,255,.9)}
 .hero::before{inset:14px}
 .hero::after{inset:18px;border-color:rgba(168,97,110,.18)}
-#snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .hero-in{position:relative;z-index:1}
 .hero .save{font-family:var(--f-en);font-size:12px;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--rose)}
 .seal{display:block;margin:0 auto;overflow:visible}
 .seal circle{fill:none;stroke:var(--rose);stroke-width:1;opacity:.55}
 .seal text{font-family:var(--f-en);font-size:28px;fill:var(--rose)}
 .seal-hero{width:76px;margin-top:26px}
-/* 대표 사진: 위가 둥근 아치 액자 */
-.hero-photo{width:74%;max-width:270px;aspect-ratio:3/4;margin:26px auto 0;border-radius:999px 999px 8px 8px;overflow:hidden;border:5px solid #fff;box-shadow:0 12px 32px rgba(46,43,56,.16);background:var(--sky-soft)}
-.hero-photo img{display:block;width:100%;height:116%;object-fit:cover}  /* 116%: 스크롤 시 사진이 액자 안에서 천천히 움직일 여유 */
+/* 대표 사진이 있을 때: 화면 가득 사진 → 아래쪽이 흰색으로 녹아듦 */
+.hero-full{padding:0 0 76px;background:var(--card)}
+.hero-full::before,.hero-full::after{display:none}
+.cover{position:relative;height:min(80svh,660px);overflow:hidden;background:var(--sky-soft)}
+.cover img{display:block;width:100%;height:112%;object-fit:cover;object-position:50% 30%}  /* 112%: 스크롤 시 사진이 천천히 움직일 여유 */
+.cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(to bottom,rgba(255,254,252,0),rgba(255,254,252,.6) 55%,var(--card))}
+.hero-full .hero-in{margin-top:4px;padding:0 28px}
 .hero .names{font-family:var(--f-en);font-weight:500;font-size:40px;line-height:1.15;margin:26px 0 8px;color:var(--ink);letter-spacing:.01em}
 .hero .names .nm{display:block}
 .hero .names .amp{display:block;font-style:italic;font-size:24px;color:var(--rose);margin:4px 0}
@@ -55,8 +63,7 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 .play .seal-hero{animation:stamp .9s cubic-bezier(.2,.9,.3,1.2) .2s both}
 .play .hero-in>:not(.seal){animation:rise .9s ease both}
 .play .hero-in .save{animation:track-in 1.4s ease both}
-.play .hero-in .hero-photo{animation:unveil 1.5s cubic-bezier(.7,0,.2,1) .15s both}
-.play .hero-photo img{animation:kenburns 2.8s cubic-bezier(.2,.6,.2,1) .15s both}
+.play .cover img{animation:cover-in 2.8s cubic-bezier(.2,.6,.2,1) both}
 .play .hero-in .names{animation:none}
 .play .names .nm i{animation:letter .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(.75s + var(--i) * 55ms)}
 .play .names .amp{animation:spin-in 1s cubic-bezier(.3,1.3,.5,1) 1.05s both}
@@ -66,8 +73,7 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 @keyframes stamp{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes track-in{from{opacity:0;letter-spacing:.9em}to{opacity:1}}
-@keyframes unveil{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(-40px)}}
-@keyframes kenburns{from{transform:scale(1.28)}to{transform:none}}
+@keyframes cover-in{from{opacity:0;transform:scale(1.18)}to{opacity:1;transform:none}}
 @keyframes letter{from{opacity:0;transform:translateY(.5em) rotate(8deg);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
 @keyframes spin-in{from{opacity:0;transform:scale(.3) rotate(-120deg)}to{opacity:1;transform:none}}
 
@@ -82,24 +88,57 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 .a.in{opacity:1;transform:none;filter:none}
 .a-track.in{letter-spacing:.26em}
 /* 섹션 사이 마름모가 돌면서 나타남 */
-section+section::before{transform:translateX(-50%) rotate(-135deg) scale(0);transition:transform .9s cubic-bezier(.3,1.5,.5,1)}
-section+section.in::before{transform:translateX(-50%) rotate(45deg) scale(1)}
+section+section::before{transform:translateX(-50%) rotate(-240deg) scale(0);transition:transform 1.2s cubic-bezier(.3,1.4,.5,1)}
+section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
+.a-frost{filter:blur(12px) brightness(1.4) saturate(.4);transform:scale(1.06)}  /* 성에 → 녹으며 선명 */
+.a-frost.in{transition-duration:1.4s}
+
+/* 화면 전체에 내리는 눈 (main.js) */
+.snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:45}
+
+/* 첫 화면 사진 아래 쌓인 눈 (화면 맨 아래에 쌓이는 눈은 main.js 캔버스) */
+.drift{position:absolute;left:0;right:0;bottom:0;height:64px;pointer-events:none;z-index:1}
+.drift svg{position:absolute;inset:0;width:100%;height:100%}
+.d-back{fill:#E2EAF1}
+.d-front{fill:var(--card);filter:drop-shadow(0 -2px 3px rgba(110,140,168,.2))}
+.drift i{position:absolute;width:8px;height:8px;background:#9DB6CD;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);opacity:0;animation:twinkle 2.8s ease-in-out infinite;animation-delay:calc(var(--i) * .47s)}
+@keyframes twinkle{0%,100%{transform:translate(-50%,-50%) scale(0) rotate(0);opacity:0}50%{transform:translate(-50%,-50%) scale(1) rotate(45deg);opacity:1}}
 /* 맨 위 스크롤 진행 막대 */
 .progress{position:fixed;top:0;left:0;right:0;height:2px;background:var(--rose);opacity:.75;transform:scaleX(0);transform-origin:0 50%;z-index:40;pointer-events:none}
 
 .greet p{margin:0 0 1.2em}
+/* 2017 → 2027 그림: 길이 그어지고, 해마다 눈송이가 피고, 끝에 반지 */
+.since{margin:26px auto 0;max-width:330px}
+.since svg{display:block;width:100%;height:auto;overflow:visible}
+.since-path{fill:none;stroke:var(--rose);stroke-width:1.2;stroke-linecap:round;opacity:.75;stroke-dasharray:var(--len) var(--len);stroke-dashoffset:var(--len);transition:stroke-dashoffset 2.3s cubic-bezier(.45,0,.25,1)}
+.since.in .since-path{stroke-dashoffset:0}
+.since .node{opacity:0;transform:scale(0);transition:opacity .4s ease var(--t),transform .7s cubic-bezier(.3,1.7,.5,1) var(--t)}
+.since.in .node{opacity:1;transform:none}
+.since .dot{fill:var(--rose)}
+.since .bg{fill:var(--card)}
+.since .fl{fill:none;stroke:#86A3BF;stroke-width:1.1;stroke-linecap:round}
+.since .rings circle{fill:none;stroke:var(--rose);stroke-width:1.5}
+.since text{font-family:var(--f-en);font-size:13px;font-weight:500;fill:var(--rose);letter-spacing:.06em}
+.since figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 .parents{display:grid;gap:10px;margin-top:32px;font-size:15px}
 .parents b{font-weight:700}
 .parents .rel{color:var(--muted);font-size:13px;margin:0 4px}
 
 /* gallery */
-.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
-.g-item{padding:0;border:0;background:var(--sky-soft);aspect-ratio:1;cursor:zoom-in;overflow:hidden;border-radius:2px}
-.g-item img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .4s}
-.g-item:hover img{transform:scale(1.04)}
-.g-item:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
-.g-hidden{display:none}
-.g-more{margin-top:18px;padding:10px 22px}
+/* 옆으로 넘기는 폴라로이드 (기울기·크기는 main.js 가 스크롤에 맞춰 계산) */
+.carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -28px;padding:18px 0 34px;scrollbar-width:none;overscroll-behavior-x:contain}
+.carousel::-webkit-scrollbar{display:none}
+.slide{flex:0 0 64%;scroll-snap-align:center;padding:0 6px;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.slide:first-child{margin-left:18%}
+.slide:last-child{margin-right:18%}
+.slide:focus-visible{outline:none}
+.slide:focus-visible .polaroid{outline:2px solid var(--rose);outline-offset:3px}
+.polaroid{position:relative;display:block;background:#fff;padding:9px 9px 34px;box-shadow:0 2px 4px rgba(46,43,56,.06),0 14px 30px rgba(46,43,56,.16);will-change:transform}
+.polaroid img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--sky-soft)}
+.polaroid small{position:absolute;right:12px;bottom:8px;font-family:var(--f-en);font-style:italic;font-size:13px;color:var(--muted)}
+.g-nav{display:flex;justify-content:center;align-items:center;gap:18px;font-family:var(--f-en);font-size:13px;letter-spacing:.14em;color:var(--muted)}
+.g-nav button{font:inherit;font-size:24px;line-height:1;width:36px;height:36px;border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer}
+.g-nav button:hover{border-color:var(--rose);color:var(--rose)}
 .lb{position:fixed;inset:0;z-index:50;background:rgba(18,18,24,.94);display:flex;align-items:center;justify-content:center;touch-action:pan-y}
 .lb[hidden]{display:none}
 .lb img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
@@ -121,6 +160,10 @@ section+section.in::before{transform:translateX(-50%) rotate(45deg) scale(1)}
 .cal .on span{position:relative}
 .cal .on svg{position:absolute;left:50%;top:50%;width:46px;height:46px;transform:translate(-50%,-50%) rotate(-6deg);overflow:visible}
 .cal .on path{fill:none;stroke:var(--rose);stroke-width:1.6;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.2s ease 1s}
+/* 동그라미 위에 내려앉는 눈송이 */
+.cal .on svg.cal-flake{left:auto;top:-7px;right:-4px;width:14px;height:14px;opacity:0;transform:translateY(-40px) rotate(-200deg);transition:transform 1.3s cubic-bezier(.3,1.25,.5,1) 2s,opacity .6s ease 2s}
+.cal.in .on svg.cal-flake{opacity:1;transform:none}
+.cal .on .cal-flake path{stroke:#7FA0BF;stroke-width:1.5;stroke-dasharray:none;stroke-dashoffset:0;transition:none}
 .cal.in .on path{stroke-dashoffset:0}
 /* 달력 날짜가 차례로 톡톡 등장 */
 .cal .d,.cal .dow{opacity:0;transform:translateY(10px) scale(.7);transition:opacity .5s ease,transform .6s cubic-bezier(.3,1.4,.5,1);transition-delay:calc(var(--i) * 16ms)}
@@ -142,7 +185,9 @@ section+section.in::before{transform:translateX(-50%) rotate(45deg) scale(1)}
 .btn{font:inherit;font-size:13px;padding:10px 6px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;text-decoration:none;cursor:pointer;line-height:1.3;transition:border-color .2s,color .2s}
 .btn:hover{border-color:var(--rose);color:var(--rose)}
 .btn:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
-.copy-addr{margin-top:10px}
+.copy-addr{margin-top:14px}
+.map{margin-top:20px;aspect-ratio:4/3;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--sky-soft)}
+.map iframe{display:block;width:100%;height:100%;border:0}
 .ways{text-align:left;display:grid;gap:18px;font-size:14px}
 .ways>div{padding-left:14px;border-left:1px solid var(--rose-soft)}
 .ways h3{font-size:14px;margin:0 0 2px;color:var(--rose)}
@@ -161,7 +206,7 @@ details[open] summary::after{content:"−"}
 .acct .btn{flex:none;padding:6px 12px;font-size:12px}
 .note{color:var(--muted);font-size:13px;margin-bottom:20px}
 
-.foot{padding:48px 28px 52px;font-size:13px;color:var(--muted);background:linear-gradient(180deg,var(--card),var(--sky-soft))}
+.foot{padding:48px 28px 84px;font-size:13px;color:var(--muted);background:linear-gradient(180deg,var(--card),var(--sky-soft))}
 .seal-foot{width:44px;margin-bottom:12px}
 /* 마지막 모노그램: 원이 그려지고 이니셜이 떠오름 */
 .seal-foot .ring{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.4s ease}
@@ -178,10 +223,11 @@ details[open] summary::after{content:"−"}
 .link-btn:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
 
 
-.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;opacity:0;transition:.25s;pointer-events:none}
+.toast{position:fixed;z-index:60;left:50%;bottom:calc(58px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion:reduce){
-  .toast,.a,.cal .d,.cal .dow,.cal .on path,section::before,.seal-foot *{transition:none!important}
-  .seal-hero,.hero-in>*,.hero-in *,.scroll-cue span,.count b{animation:none!important}
+  .toast,.a,.cal .d,.cal .dow,.cal .on svg,.cal .on path,section::before,.seal-foot *,.drift svg,.since *{transition:none!important}
+  .drift i{animation:none!important}
+  .seal-hero,.hero-in>*,.hero-in *,.cover img,.scroll-cue span,.count b{animation:none!important}
   .progress{display:none}
 }

@@ -43,13 +43,24 @@ const galleryFull = byName(
 );
 const galleryThumb = byName(
   import.meta.glob('/photos/gallery/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', {
-    eager: true, import: 'default', query: '?w=400&h=400&fit=cover&format=webp&quality=72',
+    eager: true, import: 'default', query: '?w=640&h=800&fit=cover&format=webp&quality=76',
   })
 );
-const GALLERY_PREVIEW = 9; // 처음에 보여줄 사진 수 (나머지는 '더보기')
 
 // ---------- 메타 ----------
 document.title = c.meta.title;
+
+// ---------- 첫 화면 사진 아래 쌓인 눈 (뒤·앞 두 겹의 눈 언덕 + 반짝임) ----------
+function drift(cls) {
+  const sparkles = [[12, 62], [27, 48], [44, 70], [58, 52], [73, 66], [88, 50]]
+    .map(([x, y], i) => `<i style="left:${x}%;top:${y}%;--i:${i}"></i>`).join('');
+  return `<div class="drift ${cls}" aria-hidden="true">
+    <svg viewBox="0 0 400 90" preserveAspectRatio="none">
+      <path class="d-back" d="M0 52C40 30 80 40 120 34s70-22 110-12 60 26 100 16 50-24 70-20V90H0Z"/>
+      <path class="d-front" d="M0 66c30-14 60-12 90-4s52 6 82-6 58-16 92-4 40 18 70 10 44-16 66-14V90H0Z"/>
+    </svg>${sparkles}
+  </div>`;
+}
 
 // ---------- 모노그램 (가는 선 원 + 이니셜) ----------
 function seal(cls) {
@@ -79,11 +90,13 @@ const accountGroup = (label, list) =>
 
 $('#app').innerHTML = `
 <main class="wrap">
-  <section class="hero">
-    ${fx.snow ? '<canvas id="snow" aria-hidden="true"></canvas>' : ''}
+  ${
+    mainPhoto
+      ? // 대표 사진이 있으면: 화면 가득 사진 → 아래쪽이 눈 쌓인 듯 흰색으로 녹아듦 → 이름·날짜
+        `<section class="hero hero-full">
+    <div class="cover"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high">${drift('drift-cover')}</div>
     <div class="hero-in">
       <div class="save">${esc(fx.eyebrow || 'The Wedding of')}</div>
-      ${mainPhoto ? `<div class="hero-photo"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high"></div>` : seal('seal-hero')}
       <div class="names">
         <span class="sr">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</span>
         <span class="nm" aria-hidden="true">${letters(c.groom.englishName, 0)}</span>
@@ -95,12 +108,41 @@ $('#app').innerHTML = `
       <div class="when">${dateKo}<br>${esc(c.venue.name)}</div>
     </div>
     <div class="scroll-cue" aria-hidden="true"><span></span></div>
-  </section>
+  </section>`
+      : // 사진이 없으면: 모노그램 + 영문 이름
+        `<section class="hero">
+    <div class="hero-in">
+      <div class="save">${esc(fx.eyebrow || 'The Wedding of')}</div>
+      ${seal('seal-hero')}
+      <div class="names">
+        <span class="sr">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</span>
+        <span class="nm" aria-hidden="true">${letters(c.groom.englishName, 0)}</span>
+        <span class="amp" aria-hidden="true">&amp;</span>
+        <span class="nm" aria-hidden="true">${letters(c.bride.englishName, c.groom.englishName.length + 2)}</span>
+      </div>
+      <div class="ko">${esc(c.groom.name)} <i>·</i> ${esc(c.bride.name)}</div>
+      <div class="date-en">${dateEn}</div>
+      <div class="when">${dateKo}<br>${esc(c.venue.name)}</div>
+    </div>
+    <div class="scroll-cue" aria-hidden="true"><span></span></div>
+  </section>`
+  }
 
   <section class="greet rv">
     <div class="eyebrow">Invitation</div>
     <h2>${esc(c.greeting.title)}</h2>
     ${c.greeting.paragraphs.map((p) => `<p>${lines(p)}</p>`).join('')}
+    ${
+      c.greeting.since
+        ? `<figure class="since" aria-label="${c.greeting.since}년부터 ${w.year}년까지">
+      <svg viewBox="0 0 320 112" aria-hidden="true">
+        <path class="since-path" d="M22 74C64 26 104 102 158 68S250 26 296 56"/>
+        <g class="since-nodes"></g>
+      </svg>
+      <figcaption>처음 만난 해부터 열 번째 겨울까지</figcaption>
+    </figure>`
+        : ''
+    }
     <div class="parents">
       <div>${esc(c.groom.father)} · ${esc(c.groom.mother)} <span class="rel">의 ${esc(c.groom.relation)}</span> <b>${esc(c.groom.name)}</b></div>
       <div>${esc(c.bride.father)} · ${esc(c.bride.mother)} <span class="rel">의 ${esc(c.bride.relation)}</span> <b>${esc(c.bride.name)}</b></div>
@@ -112,12 +154,18 @@ $('#app').innerHTML = `
       ? `<section class="rv">
     <div class="eyebrow">Gallery</div>
     <h2>우리의 사진</h2>
-    <div class="gallery" id="gallery">
+    <div class="carousel" id="gallery">
       ${galleryThumb
-        .map((src, i) => `<button type="button" class="g-item${i >= GALLERY_PREVIEW ? ' g-hidden' : ''}" data-i="${i}" aria-label="사진 ${i + 1} 크게 보기"><img src="${src}" alt="" loading="lazy"></button>`)
+        .map((src, i) => `<button type="button" class="slide" data-i="${i}" aria-label="사진 ${i + 1} 크게 보기">
+          <span class="polaroid"><img src="${src}" alt="" loading="lazy" draggable="false"><small>${pad(i + 1)}</small></span>
+        </button>`)
         .join('')}
     </div>
-    ${galleryThumb.length > GALLERY_PREVIEW ? `<button class="btn g-more" type="button" id="gMore">사진 더보기</button>` : ''}
+    <div class="g-nav">
+      <button type="button" id="gPrev" aria-label="이전 사진">&#8249;</button>
+      <span id="gCount">1 / ${galleryThumb.length}</span>
+      <button type="button" id="gNext" aria-label="다음 사진">&#8250;</button>
+    </div>
   </section>`
       : ''
   }
@@ -137,6 +185,9 @@ $('#app').innerHTML = `
     <div class="venue">${esc(c.venue.name)}</div>
     <div class="addr">${esc(c.venue.address)}</div>
     <div class="addr">${esc(c.venue.detail)}${c.venue.tel ? ` · Tel. ${esc(c.venue.tel)}` : ''}</div>
+    <div class="map">
+      <iframe src="https://maps.google.com/maps?q=${encodeURIComponent(c.venue.address)}&z=16&output=embed" title="${esc(c.venue.name)} 지도" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
     <button class="btn copy-addr" type="button" id="copyAddr">주소 복사</button>
     <div class="btn-row">
       <a class="btn" target="_blank" rel="noopener" href="https://map.naver.com/p/search/${encodeURIComponent(c.venue.mapQuery)}">네이버 지도</a>
@@ -189,13 +240,42 @@ $('#app').innerHTML = `
   const days = new Date(w.year, w.month, 0).getDate();
   h += '<div class="d"></div>'.repeat(first);
   // 예식일은 손으로 그린 듯한 동그라미로 표시
-  const ring = `<svg viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M37 11C30 4 14 5 8 16S7 40 22 43s21-6 22-18-7-18-17-19"/></svg>`;
+  // 동그라미가 그려진 뒤 작은 눈송이가 내려앉음
+  const ring = `<svg viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M37 11C30 4 14 5 8 16S7 40 22 43s21-6 22-18-7-18-17-19"/></svg>
+    <svg class="cal-flake" viewBox="-10 -10 20 20" aria-hidden="true"><path d="M0-9V9M-7.8-4.5 7.8 4.5M-7.8 4.5 7.8-4.5M0-5.5l2.4-2M0-5.5l-2.4-2M0 5.5l2.4 2M0 5.5l-2.4 2"/></svg>`;
   for (let d = 1; d <= days; d++) {
     const wd = (first + d - 1) % 7;
     const st = `style="--i:${7 + first + d}"`;
     h += d === w.day ? `<div class="d${cls(wd)} on" ${st}>${ring}<span>${d}</span></div>` : `<div class="d${cls(wd)}" ${st}>${d}</div>`;
   }
   $('#cal').innerHTML = h;
+})();
+
+// ---------- 2017 → 2027 그림: 함께 걸어온 길 위에 해마다 눈송이, 끝에는 반지 두 개 ----------
+(() => {
+  const path = $('.since-path');
+  if (!path) return;
+  const from = c.greeting.since, n = w.year - from, L = path.getTotalLength();
+  path.style.setProperty('--len', L);
+  const flake = 'M0-4.2V4.2M-3.6-2.1 3.6 2.1M-3.6 2.1 3.6-2.1';
+  let h = '';
+  for (let i = 0; i <= n; i++) {
+    const p = path.getPointAtLength((L * i) / n);
+    const x = p.x.toFixed(1), y = p.y.toFixed(1);
+    // 선이 그어지는 속도에 맞춰 차례로 등장
+    const st = `style="--t:${(0.15 + (2.1 * i) / n).toFixed(2)}s"`;
+    if (i === 0) {
+      h += `<g transform="translate(${x} ${y})"><g class="node" ${st}><circle r="4.2" class="dot"/>
+        <text y="22" text-anchor="middle">${from}</text></g></g>`;
+    } else if (i === n) {
+      h += `<g transform="translate(${x} ${y})"><g class="node rings" ${st}>
+        <circle cx="-3.6" r="6.2"/><circle cx="3.6" r="6.2"/>
+        <text y="-14" text-anchor="middle">${w.year}</text></g></g>`;
+    } else {
+      h += `<g transform="translate(${x} ${y})"><g class="node" ${st}><circle r="5" class="bg"/><path d="${flake}" class="fl"/></g></g>`;
+    }
+  }
+  $('.since-nodes').innerHTML = h;
 })();
 
 // ---------- D-day ----------
@@ -231,16 +311,18 @@ tick();
 setInterval(tick, 1000);
 
 // ---------- 스크롤 등장 효과 ----------
-// [선택자, 등장 방식, 순서별 지연(ms)] — 방식: up 아래에서 / left·right 옆에서 / zoom 커지며 / blur 흐림→선명 / track 자간이 좁혀지며
+// [선택자, 등장 방식, 순서별 지연(ms)] — 방식: up 아래에서 / left·right 옆에서 / zoom 커지며 / blur 흐림→선명
+//   / track 자간이 좁혀지며 / frost 성에 낀 듯 뿌옇다가 녹으며 선명
 const REVEAL = [
   ['section:not(.hero) > .eyebrow', 'track'],
   ['section:not(.hero) > h2', 'blur', () => 120],
   ['.greet > p', 'up', (i) => 200 + i * 140],
   ['.parents > div:first-child', 'left'],
   ['.parents > div:last-child', 'right', () => 150],
-  ['.g-item', 'zoom', (i) => (i % 3) * 90],
-  ['.g-more, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
+  ['.carousel', 'frost', () => 150],
+  ['.g-nav, .since, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
   ['.btn-row .btn', 'up', (i) => i * 90],
+  ['.map', 'zoom'],
   ['.ways > div', 'left', (i) => i * 110],
   ['details', 'up', (i) => i * 120],
 ];
@@ -304,7 +386,7 @@ function countUpDday() {
   const bar = document.createElement('div');
   bar.className = 'progress';
   document.body.appendChild(bar);
-  const photo = $('.hero-photo img');
+  const photo = $('.cover img');
   let queued = false;
   const update = () => {
     queued = false;
@@ -319,58 +401,212 @@ function countUpDday() {
   update();
 })();
 
-// ---------- 눈 내리는 효과 ----------
+// ---------- 눈 내리는 효과 (화면 전체) ----------
+// 바람에 흩날리는 눈송이 + 천천히 도는 결정 모양 눈 + 화면을 누르면 눈이 퍼지는 효과
+// + 화면 맨 아래에 눈이 쌓임 (스크롤해도 그 자리, 눈송이가 내려앉을수록 조금씩 높아짐)
 (() => {
-  const cv = $('#snow');
-  if (!cv || reduceMotion) return;
+  if (!fx.snow || reduceMotion) return;
+  const cv = document.createElement('canvas');
+  cv.className = 'snow';
+  cv.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(cv);
   const ctx = cv.getContext('2d');
-  const hero = cv.parentElement;
-  let W = 0, H = 0, flakes = [], visible = true, last = 0;
-  const make = (y) => ({
-    x: Math.random() * W,
-    y: y ?? Math.random() * H,
-    r: 0.8 + Math.random() * 2,
-    v: 12 + Math.random() * 22,          // px/s
-    sway: 6 + Math.random() * 14,
-    ph: Math.random() * Math.PI * 2,
-  });
+  let W = 0, H = 0, flakes = [], bursts = [], last = 0, time = 0;
+
+  // 쌓인 눈: STEP px 간격마다 높이를 저장
+  const STEP = 3, BASE = 14, MAX = 40;
+  let pile = [], sparkles = [], pileFill = null;
+  function initPile() {
+    const n = Math.ceil(W / STEP) + 2, seed = Math.random() * 10;
+    pile = Array.from({ length: n }, (_, i) => {
+      const x = i * STEP;
+      // 크고 작은 언덕이 섞인 뽀송한 윤곽
+      return BASE + Math.sin(x * 0.012 + seed) * 4 + Math.sin(x * 0.045 + seed * 2) * 2 + Math.sin(x * 0.13) * 0.8;
+    });
+    sparkles = Array.from({ length: Math.round(W / 40) }, () => ({ i: Math.floor(Math.random() * n), d: 3 + Math.random() * 8, ph: Math.random() * 7 }));
+  }
+  const surface = (x) => pile[Math.max(0, Math.min(pile.length - 1, Math.round(x / STEP)))] || 0;
+  // 눈송이가 내려앉은 자리에 둥글게 눈을 보탬 (높을수록 덜 쌓여서 MAX 근처에서 멈춤)
+  function deposit(x, amt, rad) {
+    const c0 = Math.round(x / STEP), rc = Math.max(2, Math.round(rad / STEP));
+    for (let k = -rc; k <= rc; k++) {
+      const i = c0 + k;
+      if (i < 0 || i >= pile.length) continue;
+      pile[i] += amt * Math.exp((-k * k) / (rc * rc * 0.45)) * Math.max(0, 1 - pile[i] / MAX);
+    }
+  }
+  function drawPile() {
+    // 뾰족해지지 않게 아주 조금씩 고르게
+    for (let i = 1; i < pile.length - 1; i++) pile[i] += ((pile[i - 1] + pile[i + 1]) / 2 - pile[i]) * 0.03;
+    const top = (i) => H - pile[i];
+    ctx.beginPath();
+    ctx.moveTo(-2, H + 2);
+    ctx.lineTo(-2, top(0));
+    for (let i = 1; i < pile.length; i++) {
+      const x0 = (i - 1) * STEP, x1 = i * STEP;
+      ctx.quadraticCurveTo(x0, top(i - 1), (x0 + x1) / 2, (top(i - 1) + top(i)) / 2);
+    }
+    ctx.lineTo(W + 2, H + 2);
+    ctx.closePath();
+    ctx.save();
+    ctx.shadowColor = 'rgba(70,100,135,.42)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = -3;
+    ctx.fillStyle = pileFill;
+    ctx.fill();
+    ctx.restore();
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = 'rgba(255,255,255,.95)';
+    ctx.stroke();
+    // 윗면 바로 아래 옅은 그늘 → 눈 더미가 도톰해 보이게
+    ctx.save();
+    ctx.translate(0, 4);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(150,178,205,.16)';
+    ctx.stroke();
+    ctx.restore();
+    // 표면 바로 아래 반짝임
+    for (const s of sparkles) {
+      const a = Math.pow(Math.max(0, Math.sin(time * 1.6 + s.ph)), 8);
+      if (a < 0.05) continue;
+      const x = s.i * STEP, y = H - pile[s.i] + s.d, l = 2.6 * a + 0.6;
+      ctx.beginPath();
+      ctx.moveTo(x - l, y); ctx.lineTo(x + l, y);
+      ctx.moveTo(x, y - l); ctx.lineTo(x, y + l);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(130,165,200,${a})`;
+      ctx.stroke();
+    }
+  }
+
+  // z: 가까울수록(1.4) 크고 빠르고 진하게, 멀수록(0.4) 작고 느리고 옅게
+  const make = (top) => {
+    const z = 0.4 + Math.random();
+    const crystal = Math.random() < 0.12;
+    return {
+      x: Math.random() * (W + 80) - 40,
+      y: top ? -12 : Math.random() * H,
+      z,
+      crystal,
+      r: crystal ? (4 + Math.random() * 4) * z : (0.7 + Math.random() * 1.8) * z,
+      v: (crystal ? 18 : 26) * z + Math.random() * 14,
+      sway: 8 + Math.random() * 18,
+      ph: Math.random() * Math.PI * 2,
+      rot: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 1.2,
+    };
+  };
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = hero.clientWidth;
-    H = hero.clientHeight;
+    // 휴대폰은 스크롤할 때 주소창이 숨으며 높이만 바뀜 → 그때는 쌓인 눈을 그대로 둠
+    const widthChanged = window.innerWidth !== W;
+    W = window.innerWidth;
+    H = window.innerHeight;
     cv.width = W * dpr;
     cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    flakes = Array.from({ length: Math.round(W / 9) }, () => make());
+    pileFill = ctx.createLinearGradient(0, H - MAX - 8, 0, H);
+    pileFill.addColorStop(0, '#FFFFFF');
+    pileFill.addColorStop(0.45, '#F3F7FA');
+    pileFill.addColorStop(1, '#D6E2ED');
+    if (widthChanged) {
+      initPile();
+      const n = Math.max(50, Math.min(130, Math.round((W * H) / 6500)));
+      flakes = Array.from({ length: n }, () => make(false));
+    }
+  }
+  // 흰 바탕에서도 보이도록 흰 눈에 옅은 하늘색 테두리
+  function dot(x, y, r, a) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.fill();
+    ctx.lineWidth = 0.7;
+    ctx.strokeStyle = `rgba(110,140,168,${a * 0.38})`;
+    ctx.stroke();
+  }
+  function crystal(x, y, r, rot, a) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      ctx.rotate(Math.PI / 3);
+      ctx.moveTo(0, 0); ctx.lineTo(0, -r);
+      ctx.moveTo(0, -r * 0.55); ctx.lineTo(r * 0.28, -r * 0.8);
+      ctx.moveTo(0, -r * 0.55); ctx.lineTo(-r * 0.28, -r * 0.8);
+    }
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 2.4;
+    ctx.strokeStyle = `rgba(255,255,255,${a})`;
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(120,150,180,${a * 0.75})`;
+    ctx.stroke();
+    ctx.restore();
   }
   function frame(t) {
     const dt = Math.min((t - last) / 1000 || 0, 0.05);
     last = t;
+    time += dt;
+    // 잔잔한 바람 + 가끔 부는 돌풍
+    const gust = Math.max(0, Math.sin(time * 0.23) - 0.55) * 90;
+    const wind = 10 + Math.sin(time * 0.37) * 12 + gust;
     ctx.clearRect(0, 0, W, H);
     for (const f of flakes) {
       f.y += f.v * dt;
-      f.ph += dt * 0.8;
-      if (f.y > H + 4) Object.assign(f, make(-4));
+      f.ph += dt * (0.6 + f.z * 0.5);
+      f.x += wind * f.z * dt;
+      f.rot += f.spin * dt;
       const x = f.x + Math.sin(f.ph) * f.sway;
-      // 아래로 갈수록 옅어져 흰 배경에 자연스럽게 녹아듦
-      const a = Math.max(0, 1 - f.y / H) * 0.9;
-      ctx.beginPath();
-      ctx.arc(x, f.y, f.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
-      ctx.fill();
-      ctx.lineWidth = 0.6;
-      ctx.strokeStyle = `rgba(92,116,140,${a * 0.2})`;
-      ctx.stroke();
+      if (f.x > W + 50) { Object.assign(f, make(true)); continue; }
+      // 쌓인 눈 위에 닿으면 그 자리에 쌓이고 새 눈송이로
+      if (f.y >= H - surface(x)) {
+        if (x > -4 && x < W + 4) deposit(x, (f.crystal ? 1.4 : 0.7) * f.z, f.r * 3 + 4);
+        Object.assign(f, make(true));
+        continue;
+      }
+      const a = Math.min(0.95, 0.35 + f.z * 0.45);
+      if (f.crystal) crystal(x, f.y, f.r, f.rot, a);
+      else dot(x, f.y, f.r, a);
     }
-    if (visible) requestAnimationFrame(frame);
+    // 누른 자리에서 퍼지는 눈송이
+    for (let i = bursts.length - 1; i >= 0; i--) {
+      const p = bursts[i];
+      p.life -= dt;
+      if (p.life <= 0) { bursts.splice(i, 1); continue; }
+      p.vy += 60 * dt;
+      p.vx *= 0.98;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.spin * dt;
+      if (p.y >= H - surface(p.x)) {
+        deposit(p.x, 0.9, p.r * 3 + 4);
+        bursts.splice(i, 1);
+        continue;
+      }
+      const a = Math.min(1, p.life / 0.8);
+      if (p.crystal) crystal(p.x, p.y, p.r, p.rot, a);
+      else dot(p.x, p.y, p.r, a);
+    }
+    drawPile();
+    requestAnimationFrame(frame);
   }
+  window.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.lb')) return;
+    for (let i = 0; i < 16; i++) {
+      const ang = Math.random() * Math.PI * 2, sp = 50 + Math.random() * 110;
+      bursts.push({
+        x: e.clientX, y: e.clientY,
+        vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 40,
+        r: i % 4 === 0 ? 4 + Math.random() * 3 : 1 + Math.random() * 2,
+        crystal: i % 4 === 0, rot: Math.random() * 3, spin: (Math.random() - 0.5) * 6,
+        life: 1.1 + Math.random() * 0.6,
+      });
+    }
+  }, { passive: true });
   resize();
   window.addEventListener('resize', resize);
-  new IntersectionObserver(([e]) => {
-    const was = visible;
-    visible = e.isIntersecting;
-    if (visible && !was) requestAnimationFrame((t) => { last = t; frame(t); });
-  }).observe(hero);
   requestAnimationFrame((t) => { last = t; frame(t); });
 })();
 
@@ -398,13 +634,39 @@ function countUpDday() {
     document.body.style.overflow = '';
     lastFocus?.focus();
   };
-  $('#gallery').addEventListener('click', (e) => {
-    const b = e.target.closest('.g-item');
-    if (b) open(Number(b.dataset.i));
-  });
-  $('#gMore')?.addEventListener('click', (e) => {
-    document.querySelectorAll('.g-hidden').forEach((el) => el.classList.remove('g-hidden'));
-    e.currentTarget.remove();
+  // 옆으로 넘기는 폴라로이드: 가운데 사진은 반듯하고 크게, 옆 사진은 기울고 작고 흐리게
+  const track = $('#gallery'), slides = [...track.querySelectorAll('.slide')];
+  let active = 0, queued = false;
+  const layout = () => {
+    queued = false;
+    const mid = track.scrollLeft + track.clientWidth / 2;
+    let best = Infinity;
+    slides.forEach((s, i) => {
+      const d = (s.offsetLeft - track.offsetLeft + s.offsetWidth / 2 - mid) / s.offsetWidth;
+      const k = Math.min(Math.abs(d), 1);
+      const card = s.firstElementChild;
+      card.style.transform = `translateY(${k * 18}px) rotate(${Math.max(-1, Math.min(1, d)) * 7}deg) scale(${1 - k * 0.14})`;
+      card.style.opacity = String(1 - k * 0.45);
+      if (Math.abs(d) < best) { best = Math.abs(d); active = i; }
+    });
+    $('#gCount').textContent = `${active + 1} / ${slides.length}`;
+  };
+  const go = (i) => {
+    const s = slides[(i + slides.length) % slides.length];
+    track.scrollTo({ left: s.offsetLeft - track.offsetLeft + s.offsetWidth / 2 - track.clientWidth / 2, behavior: reduceMotion ? 'auto' : 'smooth' });
+  };
+  track.addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(layout); } }, { passive: true });
+  window.addEventListener('resize', layout);
+  layout();
+  $('#gPrev').addEventListener('click', () => go(active - 1));
+  $('#gNext').addEventListener('click', () => go(active + 1));
+  // 가운데 사진을 누르면 크게 보기, 옆 사진을 누르면 그 사진으로 넘김
+  track.addEventListener('click', (e) => {
+    const s = e.target.closest('.slide');
+    if (!s) return;
+    const i = Number(s.dataset.i);
+    if (i === active) open(i);
+    else go(i);
   });
   $('#lbClose').addEventListener('click', close);
   $('#lbPrev').addEventListener('click', () => show(cur - 1));
