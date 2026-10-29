@@ -410,20 +410,41 @@ function countUpDday() {
   cv.className = 'snow';
   cv.setAttribute('aria-hidden', 'true');
   document.body.appendChild(cv);
+  // 쌓인 눈 위를 누르면 아래 버튼·사진이 아니라 눈이 반응하도록 받아 주는 투명한 띠 (스크롤은 그대로 됨)
+  const hit = document.createElement('div');
+  hit.className = 'snow-hit';
+  hit.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(hit);
+  let hitH = 0;
   const ctx = cv.getContext('2d');
   let W = 0, H = 0, flakes = [], bursts = [], last = 0, time = 0;
 
-  // 쌓인 눈: STEP px 간격마다 높이를 저장
-  const STEP = 3, BASE = 14, MAX = 40;
-  let pile = [], sparkles = [], pileFill = null;
+  // 쌓인 눈: STEP px 간격마다 높이를 저장, 윗면은 솜뭉치(puff)를 겹쳐 그려 뽀송하게
+  const STEP = 3, BASE = 16, MAX = 42;
+  let pile = [], puffs = [], sparkles = [], pileFill = null;
+  // 가장자리가 부드럽게 사라지는 둥근 그림을 미리 만들어 두고 크기만 바꿔 찍음
+  const sprite = (stops) => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(29, 27, 1, 32, 32, 32);
+    stops.forEach(([o, col]) => gr.addColorStop(o, col));
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 64, 64);
+    return c;
+  };
+  const PUFF = sprite([[0, '#FFFFFF'], [0.55, '#FFFFFF'], [0.8, 'rgba(240,245,250,.96)'], [0.93, 'rgba(226,235,243,.5)'], [1, 'rgba(226,235,243,0)']]);
+  const SHADE = sprite([[0, 'rgba(95,125,158,.16)'], [0.55, 'rgba(95,125,158,.08)'], [1, 'rgba(95,125,158,0)']]);
   function initPile() {
     const n = Math.ceil(W / STEP) + 2, seed = Math.random() * 10;
     pile = Array.from({ length: n }, (_, i) => {
       const x = i * STEP;
-      // 크고 작은 언덕이 섞인 뽀송한 윤곽
-      return BASE + Math.sin(x * 0.012 + seed) * 4 + Math.sin(x * 0.045 + seed * 2) * 2 + Math.sin(x * 0.13) * 0.8;
+      // 크고 작은 언덕이 섞인 윤곽
+      return BASE + Math.sin(x * 0.012 + seed) * 4 + Math.sin(x * 0.045 + seed * 2) * 2;
     });
-    sparkles = Array.from({ length: Math.round(W / 40) }, () => ({ i: Math.floor(Math.random() * n), d: 3 + Math.random() * 8, ph: Math.random() * 7 }));
+    // 크기와 높이가 제각각인 솜뭉치 → 울퉁불퉁 뽀송한 윗면
+    puffs = [];
+    for (let x = -14; x < W + 14; x += 9 + Math.random() * 9) puffs.push({ x, s: 0.7 + Math.random() * 0.65, dy: Math.random() * 6 });
+    sparkles = Array.from({ length: Math.round(W / 40) }, () => ({ i: Math.floor(Math.random() * n), d: 4 + Math.random() * 10, ph: Math.random() * 7 }));
   }
   const surface = (x) => pile[Math.max(0, Math.min(pile.length - 1, Math.round(x / STEP)))] || 0;
   // 눈송이가 내려앉은 자리에 둥글게 눈을 보탬 (높을수록 덜 쌓여서 MAX 근처에서 멈춤)
@@ -436,35 +457,32 @@ function countUpDday() {
     }
   }
   function drawPile() {
+    const ph = Math.round(Math.max(...pile) + 6);
+    if (Math.abs(ph - hitH) > 2) { hitH = ph; hit.style.height = `${ph}px`; }
     // 뾰족해지지 않게 아주 조금씩 고르게
     for (let i = 1; i < pile.length - 1; i++) pile[i] += ((pile[i - 1] + pile[i + 1]) / 2 - pile[i]) * 0.03;
-    const top = (i) => H - pile[i];
+    const place = (p) => {
+      const h = surface(p.x), r = (9 + h * 0.32) * p.s;
+      return [r, H - h + r * 0.6 + p.dy];
+    };
+    // ① 솜뭉치 둘레의 옅은 푸른 그늘 → 흰 화면 위에서도 눈 더미 윤곽이 보임
+    for (const p of puffs) {
+      const [r, y] = place(p);
+      ctx.drawImage(SHADE, p.x - r * 1.45, y - r * 1.7, r * 2.9, r * 2.9);
+    }
+    // ② 눈 더미 몸통 (윗면보다 조금 아래까지만 → 윗면 모양은 솜뭉치가 만듦)
     ctx.beginPath();
     ctx.moveTo(-2, H + 2);
-    ctx.lineTo(-2, top(0));
-    for (let i = 1; i < pile.length; i++) {
-      const x0 = (i - 1) * STEP, x1 = i * STEP;
-      ctx.quadraticCurveTo(x0, top(i - 1), (x0 + x1) / 2, (top(i - 1) + top(i)) / 2);
-    }
+    for (let i = 0; i < pile.length; i++) ctx.lineTo(i * STEP, H - pile[i] + 10);
     ctx.lineTo(W + 2, H + 2);
     ctx.closePath();
-    ctx.save();
-    ctx.shadowColor = 'rgba(70,100,135,.42)';
-    ctx.shadowBlur = 14;
-    ctx.shadowOffsetY = -3;
     ctx.fillStyle = pileFill;
     ctx.fill();
-    ctx.restore();
-    ctx.lineWidth = 1.4;
-    ctx.strokeStyle = 'rgba(255,255,255,.95)';
-    ctx.stroke();
-    // 윗면 바로 아래 옅은 그늘 → 눈 더미가 도톰해 보이게
-    ctx.save();
-    ctx.translate(0, 4);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(150,178,205,.16)';
-    ctx.stroke();
-    ctx.restore();
+    // ③ 솜뭉치
+    for (const p of puffs) {
+      const [r, y] = place(p);
+      ctx.drawImage(PUFF, p.x - r, y - r, r * 2, r * 2);
+    }
     // 표면 바로 아래 반짝임
     for (const s of sparkles) {
       const a = Math.pow(Math.max(0, Math.sin(time * 1.6 + s.ph)), 8);
@@ -505,10 +523,10 @@ function countUpDday() {
     cv.width = W * dpr;
     cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    pileFill = ctx.createLinearGradient(0, H - MAX - 8, 0, H);
-    pileFill.addColorStop(0, '#FFFFFF');
-    pileFill.addColorStop(0.45, '#F3F7FA');
-    pileFill.addColorStop(1, '#D6E2ED');
+    pileFill = ctx.createLinearGradient(0, H - MAX, 0, H);
+    pileFill.addColorStop(0, '#FDFEFF');
+    pileFill.addColorStop(0.6, '#F1F5F9');
+    pileFill.addColorStop(1, '#DFE8F0');
     if (widthChanged) {
       initPile();
       const n = Math.max(50, Math.min(130, Math.round((W * H) / 6500)));
@@ -575,7 +593,7 @@ function countUpDday() {
       const p = bursts[i];
       p.life -= dt;
       if (p.life <= 0) { bursts.splice(i, 1); continue; }
-      p.vy += 60 * dt;
+      p.vy += (p.g || 60) * dt;
       p.vx *= 0.98;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
@@ -592,8 +610,42 @@ function countUpDday() {
     drawPile();
     requestAnimationFrame(frame);
   }
+  // 쌓인 눈을 누르거나 쓸면: 그 자리 눈이 파이고 눈가루가 튀어 올랐다가 다시 떨어져 쌓임
+  const nearPile = (x, y) => y > H - surface(x) - 36;
+  function scoop(x, power) {
+    const rad = 18 + power * 14, c0 = Math.round(x / STEP), rc = Math.round(rad / STEP);
+    for (let k = -rc; k <= rc; k++) {
+      const i = c0 + k;
+      if (i < 0 || i >= pile.length) continue;
+      pile[i] = Math.max(3, pile[i] * (1 - 0.55 * power * Math.exp((-k * k) / (rc * rc * 0.4))));
+    }
+    const n = Math.round(6 + power * 20);
+    for (let i = 0; i < n; i++) {
+      const px = x + (Math.random() - 0.5) * rad * 1.6;
+      bursts.push({
+        x: px, y: H - surface(px) - 2,
+        vx: (px - x) * 3 + (Math.random() - 0.5) * 90,
+        vy: -(140 + Math.random() * 220) * (0.6 + power * 0.5),
+        g: 420,
+        r: i % 6 === 0 ? 3 + Math.random() * 2 : 1 + Math.random() * 2.4,
+        crystal: i % 6 === 0, rot: Math.random() * 3, spin: (Math.random() - 0.5) * 8,
+        life: 2.2,
+      });
+    }
+  }
+  let lastSweep = 0;
+  const sweep = (x, y) => {
+    const now = performance.now();
+    if (now - lastSweep < 45 || !nearPile(x, y)) return;
+    lastSweep = now;
+    scoop(x, 0.35);
+  };
+  window.addEventListener('touchmove', (e) => { for (const t of e.touches) sweep(t.clientX, t.clientY); }, { passive: true });
+  window.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && e.buttons) sweep(e.clientX, e.clientY); }, { passive: true });
+
   window.addEventListener('pointerdown', (e) => {
     if (e.target.closest('.lb')) return;
+    if (nearPile(e.clientX, e.clientY)) { scoop(e.clientX, 1); return; }
     for (let i = 0; i < 16; i++) {
       const ang = Math.random() * Math.PI * 2, sp = 50 + Math.random() * 110;
       bursts.push({

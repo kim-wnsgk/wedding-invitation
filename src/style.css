@@ -40,10 +40,20 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 /* 대표 사진이 있을 때: 화면 가득 사진 → 아래쪽이 흰색으로 녹아듦 */
 .hero-full{padding:0 0 76px;background:var(--card)}
 .hero-full::before,.hero-full::after{display:none}
-.cover{position:relative;height:min(80svh,660px);overflow:hidden;background:var(--sky-soft)}
+/* 사진 높이 = 화면 높이 − 아래 글자 영역 → 첫 화면에 사진과 이름·날짜가 함께 보임 */
+.cover{position:relative;height:clamp(300px,calc(100vh - 390px),600px);height:clamp(300px,calc(100svh - 390px),600px);overflow:hidden;background:var(--sky-soft)}
 .cover img{display:block;width:100%;height:112%;object-fit:cover;object-position:50% 30%}  /* 112%: 스크롤 시 사진이 천천히 움직일 여유 */
 .cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(to bottom,rgba(255,254,252,0),rgba(255,254,252,.6) 55%,var(--card))}
-.hero-full .hero-in{margin-top:4px;padding:0 28px}
+.hero-full .hero-in{margin-top:0;padding:0 24px}
+/* 사진이 있을 때는 영문 이름을 한 줄로 */
+.hero.hero-full .names{font-size:34px;margin:14px 0 4px;white-space:nowrap}
+.hero.hero-full .names .nm{display:inline}
+.hero.hero-full .names .amp{display:inline-block;font-size:26px;margin:0 .28em}
+.hero.hero-full .ko{margin-top:10px}
+.hero.hero-full .date-en{margin-top:16px}
+.hero.hero-full .date-en::before,.hero.hero-full .date-en::after{margin:7px auto}
+.hero.hero-full .when{margin-top:2px}
+.hero-full{padding-bottom:58px}
 .hero .names{font-family:var(--f-en);font-weight:500;font-size:40px;line-height:1.15;margin:26px 0 8px;color:var(--ink);letter-spacing:.01em}
 .hero .names .nm{display:block}
 .hero .names .amp{display:block;font-style:italic;font-size:24px;color:var(--rose);margin:4px 0}
@@ -95,6 +105,7 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 
 /* 화면 전체에 내리는 눈 (main.js) */
 .snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:45}
+.snow-hit{position:fixed;left:0;right:0;bottom:0;height:24px;z-index:46;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
 
 /* 첫 화면 사진 아래 쌓인 눈 (화면 맨 아래에 쌓이는 눈은 main.js 캔버스) */
 .drift{position:absolute;left:0;right:0;bottom:0;height:64px;pointer-events:none;z-index:1}
