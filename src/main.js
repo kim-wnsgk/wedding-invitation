@@ -218,12 +218,11 @@ $('#app').innerHTML = `
   }
 
   <section class="foot rv">
-    <div class="family" aria-label="${esc(c.groom.firstName)}, ${esc(c.bride.firstName)} 그리고 고양이 여덟 마리">
+    <div class="family" aria-hidden="true">
       <div class="couple">${groom()}<span class="fam-heart" aria-hidden="true">♥</span>${bride()}</div>
       <div class="cats-row">
         ${['whiteLong', 'tortie', 'cheeseTabby'].map((k) => cat(k)).join('')}<i class="gap"></i>${['yellowSpot1', 'yellowSpot2', 'calico', 'cow', 'black'].map((k) => cat(k)).join('')}
       </div>
-      <div class="fam-cap">${esc(c.groom.firstName)} · ${esc(c.bride.firstName)} 그리고 고양이 여덟</div>
     </div>
     <div class="sign">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</div>
     ${esc(c.closing)}

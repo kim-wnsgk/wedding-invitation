@@ -173,8 +173,8 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 .cat-gal{position:absolute;right:2px;bottom:-2px;width:40px;height:36px}
 .cat-acct{position:absolute;right:20px;top:40px;width:42px;height:38px}
 
-/* 맨 아래: 두 사람과 고양이 여덟 마리 */
-.family{margin:0 auto 18px;max-width:340px}
+/* 맨 아래: 두 사람과 고양이들 */
+.family{margin:0 auto 22px;max-width:340px}
 .couple{display:flex;justify-content:center;align-items:flex-end;gap:2px}
 .couple .ch{width:46px;height:74px;transform-origin:50% 100%;animation:lean 3.2s ease-in-out infinite alternate}
 .couple .ch-bride{animation-direction:alternate-reverse}
@@ -184,7 +184,6 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 .cats-row{display:flex;justify-content:center;align-items:flex-end;margin-top:-6px}
 .cats-row .cat{width:38px;height:34px;margin:0 -2px}
 .cats-row .gap{width:10px}
-.fam-cap{margin-top:6px;font-size:12px;color:var(--muted);letter-spacing:.04em}
 
 .greet p{margin:0 0 1.2em}
 /* 2017 → 2027 그림: 길이 그어지고, 해마다 눈송이가 피고, 끝에 반지 */
