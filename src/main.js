@@ -131,7 +131,7 @@ $('#app').innerHTML = `
   <section class="greet rv">
     <div class="eyebrow">Invitation</div>
     <h2>${esc(c.greeting.title)}</h2>
-    ${c.greeting.paragraphs.map((p) => `<p>${lines(p)}</p>`).join('')}
+    ${c.greeting.paragraphs.map((p) => `<p>${p.map((l, k) => `<span class="ln" style="--k:${k}">${esc(l)}</span>`).join('<br>')}</p>`).join('')}
     ${
       c.greeting.since
         ? `<figure class="since" aria-label="${c.greeting.since}년부터 ${w.year}년까지">
@@ -312,11 +312,11 @@ setInterval(tick, 1000);
 
 // ---------- 스크롤 등장 효과 ----------
 // [선택자, 등장 방식, 순서별 지연(ms)] — 방식: up 아래에서 / left·right 옆에서 / zoom 커지며 / blur 흐림→선명
-//   / track 자간이 좁혀지며 / frost 성에 낀 듯 뿌옇다가 녹으며 선명
+//   / track 자간이 좁혀지며 / frost 성에 낀 듯 뿌옇다가 녹으며 선명 / lines 한 줄씩 차례로
 const REVEAL = [
   ['section:not(.hero) > .eyebrow', 'track'],
   ['section:not(.hero) > h2', 'blur', () => 120],
-  ['.greet > p', 'up', (i) => 200 + i * 140],
+  ['.greet > p', 'lines', (i) => 150 + i * 120],
   ['.parents > div:first-child', 'left'],
   ['.parents > div:last-child', 'right', () => 150],
   ['.carousel', 'frost', () => 150],
@@ -342,6 +342,7 @@ const REVEAL = [
     if (el.classList.contains('in')) return;
     el.classList.add('in');
     if (el.id === 'dday') countUpDday();
+    if (el.classList.contains('foot')) window.dispatchEvent(new Event('flurry'));
   };
   // 화면 아래쪽 12% 위로 올라오면 등장
   const showIO = new IntersectionObserver(
@@ -419,34 +420,41 @@ function countUpDday() {
   const ctx = cv.getContext('2d');
   let W = 0, H = 0, flakes = [], bursts = [], last = 0, time = 0;
 
-  // 쌓인 눈: STEP px 간격마다 높이를 저장, 윗면은 솜뭉치(puff)를 겹쳐 그려 뽀송하게
-  const STEP = 3, BASE = 16, MAX = 42;
-  let pile = [], puffs = [], sparkles = [], pileFill = null;
-  // 가장자리가 부드럽게 사라지는 둥근 그림을 미리 만들어 두고 크기만 바꿔 찍음
-  const sprite = (stops) => {
+  // 쌓인 눈: 아래는 STEP px 간격마다 높이, 양옆은 SSTEP px 간격마다 두께(화면 아래에서부터 잰 위치 기준)
+  const STEP = 3, BASE = 15, MAX = 42;
+  const SSTEP = 4, SMAX = 28;
+  let pile = [], sideL = [], sideR = [], sparkles = [], pileFill = null, fillL = null, fillR = null;
+  // 눈 결: 흰 알갱이와 옅은 하늘색 알갱이를 뿌린 작은 무늬를 반복해서 덮음
+  const GRAIN = (() => {
     const c = document.createElement('canvas');
-    c.width = c.height = 64;
-    const g = c.getContext('2d'), gr = g.createRadialGradient(29, 27, 1, 32, 32, 32);
-    stops.forEach(([o, col]) => gr.addColorStop(o, col));
-    g.fillStyle = gr;
-    g.fillRect(0, 0, 64, 64);
-    return c;
-  };
-  const PUFF = sprite([[0, '#FFFFFF'], [0.55, '#FFFFFF'], [0.8, 'rgba(240,245,250,.96)'], [0.93, 'rgba(226,235,243,.5)'], [1, 'rgba(226,235,243,0)']]);
-  const SHADE = sprite([[0, 'rgba(95,125,158,.16)'], [0.55, 'rgba(95,125,158,.08)'], [1, 'rgba(95,125,158,0)']]);
+    c.width = c.height = 96;
+    const g = c.getContext('2d');
+    for (let i = 0; i < 420; i++) {
+      const white = Math.random() < 0.6;
+      g.fillStyle = white ? `rgba(255,255,255,${0.6 + Math.random() * 0.4})` : `rgba(140,170,200,${0.12 + Math.random() * 0.2})`;
+      g.beginPath();
+      g.arc(Math.random() * 96, Math.random() * 96, 0.4 + Math.random() * (white ? 1.1 : 0.7), 0, Math.PI * 2);
+      g.fill();
+    }
+    return ctx.createPattern(c, 'repeat');
+  })();
+  // 양옆: 아래 모서리는 두껍고 위로 갈수록 얇아지는 모양 (창틀 구석에 쌓인 눈처럼)
+  const sideCap = (i) => 4 + (SMAX - 4) * Math.exp((-i * SSTEP) / 150);
   function initPile() {
     const n = Math.ceil(W / STEP) + 2, seed = Math.random() * 10;
     pile = Array.from({ length: n }, (_, i) => {
       const x = i * STEP;
-      // 크고 작은 언덕이 섞인 윤곽
-      return BASE + Math.sin(x * 0.012 + seed) * 4 + Math.sin(x * 0.045 + seed * 2) * 2;
+      // 완만한 큰 언덕 + 잔잔한 굴곡
+      return BASE + Math.sin(x * 0.011 + seed) * 5 + Math.sin(x * 0.037 + seed * 2) * 2;
     });
-    // 크기와 높이가 제각각인 솜뭉치 → 울퉁불퉁 뽀송한 윗면
-    puffs = [];
-    for (let x = -14; x < W + 14; x += 9 + Math.random() * 9) puffs.push({ x, s: 0.7 + Math.random() * 0.65, dy: Math.random() * 6 });
-    sparkles = Array.from({ length: Math.round(W / 40) }, () => ({ i: Math.floor(Math.random() * n), d: 4 + Math.random() * 10, ph: Math.random() * 7 }));
+    const m = Math.ceil((Math.max(window.screen.height || 0, H) * 1.3) / SSTEP);
+    const side = (s) => Array.from({ length: m }, (_, i) => (2 + 13 * Math.exp((-i * SSTEP) / 110)) * (0.85 + 0.15 * Math.sin(i * 0.21 + s)));
+    sideL = side(seed);
+    sideR = side(seed + 3);
+    sparkles = Array.from({ length: Math.round(W / 30) }, () => ({ i: Math.floor(Math.random() * n), d: 4 + Math.random() * 12, ph: Math.random() * 7 }));
   }
   const surface = (x) => pile[Math.max(0, Math.min(pile.length - 1, Math.round(x / STEP)))] || 0;
+  const sideAt = (arr, y) => arr[Math.max(0, Math.min(arr.length - 1, Math.round((H - y) / SSTEP)))] || 0;
   // 눈송이가 내려앉은 자리에 둥글게 눈을 보탬 (높을수록 덜 쌓여서 MAX 근처에서 멈춤)
   function deposit(x, amt, rad) {
     const c0 = Math.round(x / STEP), rc = Math.max(2, Math.round(rad / STEP));
@@ -456,47 +464,89 @@ function countUpDday() {
       pile[i] += amt * Math.exp((-k * k) / (rc * rc * 0.45)) * Math.max(0, 1 - pile[i] / MAX);
     }
   }
+  function depositSide(arr, y, amt) {
+    const c0 = Math.round((H - y) / SSTEP);
+    for (let k = -4; k <= 4; k++) {
+      const i = c0 + k;
+      if (i < 0 || i >= arr.length) continue;
+      arr[i] += amt * Math.exp((-k * k) / 6) * Math.max(0, 1 - arr[i] / sideCap(i));
+    }
+  }
+  const smooth = (arr, k) => { for (let i = 1; i < arr.length - 1; i++) arr[i] += ((arr[i - 1] + arr[i + 1]) / 2 - arr[i]) * k; };
+  // 부드러운 곡선으로 이은 눈 더미를 칠함: 옅은 그늘 → 바탕색 → 눈 결 → 윗면 아래 옅은 음영
+  function paintDrift(trace, fill, shadeDX, shadeDY) {
+    ctx.beginPath();
+    trace();
+    ctx.closePath();
+    ctx.save();
+    ctx.shadowColor = 'rgba(80,110,145,.24)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetX = -shadeDX;
+    ctx.shadowOffsetY = -shadeDY;
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.clip();
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = GRAIN;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.translate(shadeDX * 6, shadeDY * 6);
+    ctx.lineWidth = 7;
+    ctx.strokeStyle = 'rgba(160,188,215,.13)';
+    ctx.stroke();
+    ctx.restore();
+  }
+  // 점들을 이어 곡선 경로로 (중간점을 지나는 2차 곡선)
+  function curve(pts) {
+    ctx.lineTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      ctx.quadraticCurveTo(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+    }
+  }
   function drawPile() {
     const ph = Math.round(Math.max(...pile) + 6);
     if (Math.abs(ph - hitH) > 2) { hitH = ph; hit.style.height = `${ph}px`; }
-    // 뾰족해지지 않게 아주 조금씩 고르게
-    for (let i = 1; i < pile.length - 1; i++) pile[i] += ((pile[i - 1] + pile[i + 1]) / 2 - pile[i]) * 0.03;
-    const place = (p) => {
-      const h = surface(p.x), r = (9 + h * 0.32) * p.s;
-      return [r, H - h + r * 0.6 + p.dy];
-    };
-    // ① 솜뭉치 둘레의 옅은 푸른 그늘 → 흰 화면 위에서도 눈 더미 윤곽이 보임
-    for (const p of puffs) {
-      const [r, y] = place(p);
-      ctx.drawImage(SHADE, p.x - r * 1.45, y - r * 1.7, r * 2.9, r * 2.9);
-    }
-    // ② 눈 더미 몸통 (윗면보다 조금 아래까지만 → 윗면 모양은 솜뭉치가 만듦)
-    ctx.beginPath();
-    ctx.moveTo(-2, H + 2);
-    for (let i = 0; i < pile.length; i++) ctx.lineTo(i * STEP, H - pile[i] + 10);
-    ctx.lineTo(W + 2, H + 2);
-    ctx.closePath();
-    ctx.fillStyle = pileFill;
-    ctx.fill();
-    // ③ 솜뭉치
-    for (const p of puffs) {
-      const [r, y] = place(p);
-      ctx.drawImage(PUFF, p.x - r, y - r, r * 2, r * 2);
-    }
-    // 표면 바로 아래 반짝임
+    // 뾰족해지지 않게 조금씩 고르게 → 바람에 다듬어진 듯 완만한 눈 더미
+    smooth(pile, 0.05);
+    smooth(sideL, 0.06);
+    smooth(sideR, 0.06);
+    const rows = Math.ceil(H / SSTEP) + 2;
+    // 왼쪽 · 오른쪽 가장자리
+    paintDrift(() => {
+      ctx.moveTo(-2, H + 2);
+      curve(Array.from({ length: rows }, (_, i) => [sideL[i] || 0, H - i * SSTEP]));
+      ctx.lineTo(-2, -10);
+    }, fillL, -1, 0);
+    paintDrift(() => {
+      ctx.moveTo(W + 2, H + 2);
+      curve(Array.from({ length: rows }, (_, i) => [W - (sideR[i] || 0), H - i * SSTEP]));
+      ctx.lineTo(W + 2, -10);
+    }, fillR, 1, 0);
+    // 아래
+    paintDrift(() => {
+      ctx.moveTo(-2, H + 2);
+      curve(pile.map((h, i) => [i * STEP, H - h]));
+      ctx.lineTo(W + 2, H + 2);
+    }, pileFill, 0, 1);
+    // 윗면에서 반짝이는 눈 결정
     for (const s of sparkles) {
-      const a = Math.pow(Math.max(0, Math.sin(time * 1.6 + s.ph)), 8);
+      const a = Math.pow(Math.max(0, Math.sin(time * 1.5 + s.ph)), 10);
       if (a < 0.05) continue;
-      const x = s.i * STEP, y = H - pile[s.i] + s.d, l = 2.6 * a + 0.6;
+      const x = s.i * STEP, y = H - pile[s.i] + s.d, l = 2.8 * a + 0.5;
       ctx.beginPath();
       ctx.moveTo(x - l, y); ctx.lineTo(x + l, y);
       ctx.moveTo(x, y - l); ctx.lineTo(x, y + l);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = `rgba(130,165,200,${a})`;
+      ctx.strokeStyle = `rgba(150,182,214,${a})`;
       ctx.stroke();
     }
   }
 
+  // 펑펑 내릴 때 잠깐 더한 눈송이는 한 번 내려앉으면 사라짐
+  const respawn = (f) => { if (f.temp) f.dead = true; else Object.assign(f, make(true)); };
   // z: 가까울수록(1.4) 크고 빠르고 진하게, 멀수록(0.4) 작고 느리고 옅게
   const make = (top) => {
     const z = 0.4 + Math.random();
@@ -523,10 +573,18 @@ function countUpDday() {
     cv.width = W * dpr;
     cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // 윗면은 햇빛 받은 흰색, 깊어질수록 푸르스름한 그늘
     pileFill = ctx.createLinearGradient(0, H - MAX, 0, H);
-    pileFill.addColorStop(0, '#FDFEFF');
-    pileFill.addColorStop(0.6, '#F1F5F9');
-    pileFill.addColorStop(1, '#DFE8F0');
+    pileFill.addColorStop(0, '#FFFFFF');
+    pileFill.addColorStop(0.35, '#F7FAFC');
+    pileFill.addColorStop(1, '#DCE6EF');
+    fillL = ctx.createLinearGradient(SMAX, 0, 0, 0);
+    fillR = ctx.createLinearGradient(W - SMAX, 0, W, 0);
+    for (const f of [fillL, fillR]) {
+      f.addColorStop(0, '#FFFFFF');
+      f.addColorStop(0.4, '#F6F9FC');
+      f.addColorStop(1, '#DCE6EF');
+    }
     if (widthChanged) {
       initPile();
       const n = Math.max(50, Math.min(130, Math.round((W * H) / 6500)));
@@ -569,7 +627,8 @@ function countUpDday() {
     time += dt;
     // 잔잔한 바람 + 가끔 부는 돌풍
     const gust = Math.max(0, Math.sin(time * 0.23) - 0.55) * 90;
-    const wind = 10 + Math.sin(time * 0.37) * 12 + gust;
+    // 바람이 가끔 왼쪽으로도 불어서 왼쪽 가장자리에도 눈이 쌓임
+    const wind = 6 + Math.sin(time * 0.37) * 16 + gust;
     ctx.clearRect(0, 0, W, H);
     for (const f of flakes) {
       f.y += f.v * dt;
@@ -577,11 +636,22 @@ function countUpDday() {
       f.x += wind * f.z * dt;
       f.rot += f.spin * dt;
       const x = f.x + Math.sin(f.ph) * f.sway;
-      if (f.x > W + 50) { Object.assign(f, make(true)); continue; }
+      if (f.x > W + 50 || f.x < -60) { respawn(f); continue; }
+      // 바람에 밀려 화면 양옆 가장자리에 닿으면 옆에 쌓임
+      if (f.y > 0 && x < W + 2 && x >= W - sideAt(sideR, f.y) && wind > 0) {
+        depositSide(sideR, f.y, (f.crystal ? 1.2 : 0.6) * f.z);
+        respawn(f);
+        continue;
+      }
+      if (f.y > 0 && x > -2 && x <= sideAt(sideL, f.y) && wind < 0) {
+        depositSide(sideL, f.y, (f.crystal ? 1.2 : 0.6) * f.z);
+        respawn(f);
+        continue;
+      }
       // 쌓인 눈 위에 닿으면 그 자리에 쌓이고 새 눈송이로
       if (f.y >= H - surface(x)) {
         if (x > -4 && x < W + 4) deposit(x, (f.crystal ? 1.4 : 0.7) * f.z, f.r * 3 + 4);
-        Object.assign(f, make(true));
+        respawn(f);
         continue;
       }
       const a = Math.min(0.95, 0.35 + f.z * 0.45);
@@ -607,6 +677,7 @@ function countUpDday() {
       if (p.crystal) crystal(p.x, p.y, p.r, p.rot, a);
       else dot(p.x, p.y, p.r, a);
     }
+    if (flakes.some((f) => f.dead)) flakes = flakes.filter((f) => !f.dead);
     drawPile();
     requestAnimationFrame(frame);
   }
@@ -642,6 +713,14 @@ function countUpDday() {
   };
   window.addEventListener('touchmove', (e) => { for (const t of e.touches) sweep(t.clientX, t.clientY); }, { passive: true });
   window.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && e.buttons) sweep(e.clientX, e.clientY); }, { passive: true });
+
+  // 맨 아래(감사 인사)에 닿으면 잠시 눈이 펑펑 → 내려앉고 나면 원래대로
+  let lastFlurry = 0;
+  window.addEventListener('flurry', () => {
+    if (time - lastFlurry < 20) return;
+    lastFlurry = time;
+    for (let i = 0; i < 80; i++) flakes.push({ ...make(true), y: -Math.random() * H * 0.8, temp: true });
+  });
 
   window.addEventListener('pointerdown', (e) => {
     if (e.target.closest('.lb')) return;
