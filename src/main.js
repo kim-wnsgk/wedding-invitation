@@ -7,6 +7,8 @@ const esc = (s) =>
   String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const lines = (arr) => arr.map(esc).join('<br>');
 const pad = (n) => String(n).padStart(2, '0');
+// 한 글자씩 등장시키기 위해 글자마다 감싸기 (--i: 등장 순번)
+const letters = (s, start) => [...s].map((ch, i) => `<i style="--i:${start + i}">${esc(ch)}</i>`).join('');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const w = c.wedding;
@@ -52,8 +54,8 @@ document.title = c.meta.title;
 // ---------- 모노그램 (가는 선 원 + 이니셜) ----------
 function seal(cls) {
   return `<svg class="seal ${cls}" viewBox="0 0 120 120" aria-hidden="true">
-    <circle cx="60" cy="60" r="54" stroke-dasharray="1 5" stroke-linecap="round"/>
-    <circle cx="60" cy="60" r="46"/>
+    <circle class="ring-dot" cx="60" cy="60" r="54" stroke-dasharray="1 5" stroke-linecap="round"/>
+    <circle class="ring" cx="60" cy="60" r="46" pathLength="1" transform="rotate(-90 60 60)"/>
     <text x="60" y="62" text-anchor="middle" dominant-baseline="middle">${esc(fx.monogram || `${c.groom.englishName[0]}&${c.bride.englishName[0]}`)}</text>
   </svg>`;
 }
@@ -82,7 +84,12 @@ $('#app').innerHTML = `
     <div class="hero-in">
       <div class="save">${esc(fx.eyebrow || 'The Wedding of')}</div>
       ${mainPhoto ? `<div class="hero-photo"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high"></div>` : seal('seal-hero')}
-      <div class="names">${esc(c.groom.englishName)}<span>&amp;</span>${esc(c.bride.englishName)}</div>
+      <div class="names">
+        <span class="sr">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</span>
+        <span class="nm" aria-hidden="true">${letters(c.groom.englishName, 0)}</span>
+        <span class="amp" aria-hidden="true">&amp;</span>
+        <span class="nm" aria-hidden="true">${letters(c.bride.englishName, c.groom.englishName.length + 2)}</span>
+      </div>
       <div class="ko">${esc(c.groom.name)} <i>·</i> ${esc(c.bride.name)}</div>
       <div class="date-en">${dateEn}</div>
       <div class="when">${dateKo}<br>${esc(c.venue.name)}</div>
@@ -177,7 +184,8 @@ $('#app').innerHTML = `
 // ---------- 달력 ----------
 (() => {
   const cls = (i) => (i === 0 ? ' sun' : i === 6 ? ' sat' : '');
-  let h = DOW_EN.map((d, i) => `<div class="dow${cls(i)}">${d}</div>`).join('');
+  // --i: 차례로 등장할 때의 순번
+  let h = DOW_EN.map((d, i) => `<div class="dow${cls(i)}" style="--i:${i}">${d}</div>`).join('');
   const first = new Date(w.year, w.month - 1, 1).getDay();
   const days = new Date(w.year, w.month, 0).getDate();
   h += '<div class="d"></div>'.repeat(first);
@@ -185,12 +193,17 @@ $('#app').innerHTML = `
   const ring = `<svg viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M37 11C30 4 14 5 8 16S7 40 22 43s21-6 22-18-7-18-17-19"/></svg>`;
   for (let d = 1; d <= days; d++) {
     const wd = (first + d - 1) % 7;
-    h += d === w.day ? `<div class="d${cls(wd)} on">${ring}<span>${d}</span></div>` : `<div class="d${cls(wd)}">${d}</div>`;
+    const st = `style="--i:${7 + first + d}"`;
+    h += d === w.day ? `<div class="d${cls(wd)} on" ${st}>${ring}<span>${d}</span></div>` : `<div class="d${cls(wd)}" ${st}>${d}</div>`;
   }
   $('#cal').innerHTML = h;
 })();
 
 // ---------- D-day ----------
+$('#dday').innerHTML = `${esc(couple)}의 결혼식이 <strong id="ddayNum"></strong> 남았습니다`;
+$('#count').innerHTML = ['Days', 'Hours', 'Mins', 'Secs'].map((l) => `<div><b></b><small>${l}</small></div>`).join('');
+const countCells = [...document.querySelectorAll('#count b')];
+let daysLeft = 0, ddayCounting = false, ticked = false;
 function tick() {
   const diff = WED - new Date();
   if (diff <= 0) {
@@ -200,31 +213,107 @@ function tick() {
   }
   const s = Math.floor(diff / 1000);
   const D = Math.floor(s / 86400), H = Math.floor((s % 86400) / 3600), M = Math.floor((s % 3600) / 60), S = s % 60;
-  $('#dday').innerHTML = `${esc(couple)}의 결혼식이 <strong>${D + 1}일</strong> 남았습니다`;
-  $('#count').innerHTML = [[D, 'Days'], [pad(H), 'Hours'], [pad(M), 'Mins'], [pad(S), 'Secs']]
-    .map(([v, l]) => `<div><b>${v}</b><small>${l}</small></div>`)
-    .join('');
+  daysLeft = D + 1;
+  if (!ddayCounting) $('#ddayNum').textContent = `${daysLeft}일`;
+  // 바뀐 숫자만 위에서 굴러 내려오듯 교체
+  [D, pad(H), pad(M), pad(S)].forEach((v, i) => {
+    const b = countCells[i];
+    if (b.textContent === String(v)) return;
+    b.textContent = v;
+    if (ticked && !reduceMotion) {
+      b.classList.remove('roll');
+      void b.offsetWidth;
+      b.classList.add('roll');
+    }
+  });
+  ticked = true;
 }
 tick();
 setInterval(tick, 1000);
 
 // ---------- 스크롤 등장 효과 ----------
+// [선택자, 등장 방식, 순서별 지연(ms)] — 방식: up 아래에서 / left·right 옆에서 / zoom 커지며 / blur 흐림→선명 / track 자간이 좁혀지며
+const REVEAL = [
+  ['section:not(.hero) > .eyebrow', 'track'],
+  ['section:not(.hero) > h2', 'blur', () => 120],
+  ['.greet > p', 'up', (i) => 200 + i * 140],
+  ['.parents > div:first-child', 'left'],
+  ['.parents > div:last-child', 'right', () => 150],
+  ['.g-item', 'zoom', (i) => (i % 3) * 90],
+  ['.g-more, .cal-head, .dday, .count, .ics, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
+  ['.btn-row .btn', 'up', (i) => i * 90],
+  ['.ways > div', 'left', (i) => i * 110],
+  ['details', 'up', (i) => i * 120],
+];
 (() => {
-  const els = document.querySelectorAll('.rv');
+  REVEAL.forEach(([sel, type, delay]) =>
+    document.querySelectorAll(sel).forEach((el, i) => {
+      el.classList.add('a', `a-${type}`);
+      if (delay) el.style.setProperty('--d', `${delay(i)}ms`);
+    })
+  );
+  const els = document.querySelectorAll('.a, .cal, .seal-foot, section:not(.hero)');
   if (reduceMotion || !('IntersectionObserver' in window)) {
     els.forEach((el) => el.classList.add('in'));
     return;
   }
   const io = new IntersectionObserver(
     (entries) => entries.forEach((e) => {
-      if (e.isIntersecting) {
-        e.target.classList.add('in');
-        io.unobserve(e.target);
-      }
+      if (!e.isIntersecting) return;
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+      if (e.target.id === 'dday') countUpDday();
     }),
-    { threshold: 0.15 }
+    { rootMargin: '0px 0px -12% 0px' }
   );
   els.forEach((el) => io.observe(el));
+  // 맨 아래 요소는 화면 안쪽 기준선까지 올라오지 못하므로, 끝까지 내리면 남은 것을 모두 등장시킴
+  const atBottom = () => {
+    if (window.innerHeight + window.scrollY < document.documentElement.scrollHeight - 4) return;
+    els.forEach((el) => {
+      if (!el.classList.contains('in') && el.getBoundingClientRect().top < window.innerHeight) {
+        el.classList.add('in');
+        io.unobserve(el);
+      }
+    });
+  };
+  window.addEventListener('scroll', atBottom, { passive: true });
+})();
+
+// D-day 숫자가 0부터 빠르게 올라감
+function countUpDday() {
+  const el = $('#ddayNum');
+  if (!el || !daysLeft) return;
+  ddayCounting = true;
+  const t0 = performance.now(), dur = 1400;
+  const step = (t) => {
+    const p = Math.min((t - t0) / dur, 1);
+    el.textContent = `${Math.round(daysLeft * (1 - Math.pow(1 - p, 3)))}일`;
+    if (p < 1) requestAnimationFrame(step);
+    else ddayCounting = false;
+  };
+  requestAnimationFrame(step);
+}
+
+// ---------- 스크롤 진행 막대 · 대표 사진 패럴랙스 ----------
+(() => {
+  if (reduceMotion) return;
+  const bar = document.createElement('div');
+  bar.className = 'progress';
+  document.body.appendChild(bar);
+  const photo = $('.hero-photo img');
+  let queued = false;
+  const update = () => {
+    queued = false;
+    const y = window.scrollY, max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.transform = `scaleX(${max > 0 ? Math.min(y / max, 1) : 0})`;
+    // 사진이 액자 안에서 스크롤보다 천천히 움직임
+    if (photo && y < window.innerHeight * 1.5) photo.style.translate = `0 ${-Math.min(y * 0.12, 52)}px`;
+  };
+  window.addEventListener('scroll', () => {
+    if (!queued) { queued = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  update();
 })();
 
 // ---------- 눈 내리는 효과 ----------
