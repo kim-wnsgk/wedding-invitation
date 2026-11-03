@@ -227,7 +227,7 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 .lb img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
 .lb-btn{position:absolute;background:none;border:0;color:#fff;font-size:38px;line-height:1;width:48px;height:48px;cursor:pointer;opacity:.85;font-family:var(--f-en)}
 .lb-btn:focus-visible{outline:2px solid #fff;outline-offset:-4px}
-.lb-close{top:calc(8px + env(safe-area-inset-top,0px));right:8px}
+.lb-close{top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.16);font-size:30px;line-height:42px;opacity:1}
 .lb-prev{left:4px;top:50%;transform:translateY(-50%)}
 .lb-next{right:4px;top:50%;transform:translateY(-50%)}
 .lb-count{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:rgba(255,255,255,.8);font-family:var(--f-en);font-size:13px;letter-spacing:.12em}
@@ -619,12 +619,26 @@ h2.type{filter:none!important;transform:none!important}
 @keyframes caret{50%{opacity:0}}
 
 /* ---------- 말린 꽃잎 장식 ---------- */
-.pressed{position:absolute;width:42px;height:42px;pointer-events:none;opacity:0;transform:translate(-14px,-60px) rotate(calc(var(--r) - 70deg));filter:drop-shadow(0 1px 1px rgba(80,60,40,.15))}
-.pressed.in{opacity:.92;transform:rotate(var(--r));transition:opacity .8s ease .3s,transform 2s cubic-bezier(.25,.8,.3,1) .3s}
-.pf-tr{right:22px;top:34px}
-.pf-bl{left:20px;bottom:30px}
-.pf-tl{left:22px;top:30px;width:36px;height:36px}
-.pf-tr2{right:24px;top:30px;width:34px;height:34px}
+/* 위에서 하늘하늘 좌우로 흔들리며 떨어지다가, 톡 내려앉아 종이에 눌림 */
+.pressed{position:absolute;z-index:4;width:58px;height:58px;pointer-events:none;opacity:0;transform:rotate(var(--r));filter:drop-shadow(0 3px 3px rgba(80,60,40,.22))}
+.pressed.in{animation:flutter 3s cubic-bezier(.35,.55,.4,1) .25s both}
+@keyframes flutter{
+  0%{opacity:0;transform:translate(-40px,-260px) rotate(calc(var(--r) - 140deg)) scale(.85)}
+  10%{opacity:1}
+  30%{transform:translate(34px,-170px) rotate(calc(var(--r) + 50deg)) scale(.95)}
+  52%{transform:translate(-26px,-80px) rotate(calc(var(--r) - 35deg))}
+  72%{transform:translate(14px,-18px) rotate(calc(var(--r) + 18deg))}
+  86%{transform:translate(-3px,3px) rotate(calc(var(--r) - 4deg)) scale(1.06,.94)}
+  100%{opacity:1;transform:rotate(var(--r))}
+}
+.pf-tr{right:16px;top:26px}
+.pf-bl{left:14px;bottom:26px}
+.pf-tl{left:16px;top:24px;width:50px;height:50px}
+.pf-tr2{right:16px;top:22px;width:50px;height:50px}
+.pf-tl3{left:18px;top:24px;width:50px;height:50px}
+.pf-bl2{left:16px;bottom:24px;width:48px;height:48px}
+.pf-tr3{right:16px;top:150px;width:46px;height:46px}
+.pf-tl4{left:18px;top:250px;width:40px;height:40px}
 
 /* ---------- 밀랍 도장: 인사말 끝에서 쿵 찍히고 살짝 번짐 ---------- */
 .wax{position:relative;width:56px;height:56px;margin:30px auto 0;border-radius:50%;display:grid;place-items:center;opacity:0;
@@ -672,4 +686,81 @@ h2.type{filter:none!important;transform:none!important}
   section:not(.hero)>.eyebrow.a,.pressed,.wax,.carousel .slide{transition:none!important;animation:none!important;opacity:1;clip-path:none;transform:none}
   section:not(.hero)>.eyebrow.a{color:var(--rose)}
   .sunrays{display:none}
+}
+.lb img{transition:transform .25s ease}
+.lb-hint{position:absolute;left:0;right:0;bottom:calc(44px + env(safe-area-inset-bottom,0px));text-align:center;font-size:11px;color:rgba(255,255,255,.55);pointer-events:none}
+
+/* ---------- 오프닝 시간대 인사 ---------- */
+.cine-hi{display:block;margin-bottom:10px;font-size:13px;color:var(--muted);letter-spacing:.04em}
+.cine.go .cine-hi{animation:cine-up .8s cubic-bezier(.2,.7,.2,1) .85s both}
+
+/* ---------- 첫 화면 리본 ---------- */
+.ribbon{display:block;width:84px;height:28px;margin:12px auto -4px;overflow:visible}
+.ribbon path{fill:none;stroke:#C9A25F;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}
+.ribbon circle{fill:#C9A25F;opacity:0}
+.play .ribbon path{animation:draw 1.4s ease 1.35s forwards}
+.play .ribbon path+path{animation-delay:2s}
+.play .ribbon circle{animation:pop-in .4s ease 2.1s forwards}
+.hero-full .hero-date::before{display:none}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pop-in{from{opacity:0;transform:scale(0)}to{opacity:1;transform:none}}
+.intro-on .ribbon *{animation-play-state:paused!important}
+
+/* ---------- 인사말 한 줄 하트 ---------- */
+.heart-line{display:block;width:100%;max-width:300px;height:auto;margin:26px auto 0;overflow:visible}
+.heart-line path{fill:none;stroke:#C9A25F;stroke-width:1.3;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}
+.greet.in .heart-line path{animation:draw 2.4s ease-in-out .3s forwards}
+
+/* ---------- 인사말: 잉크가 스며들 듯 ---------- */
+.a-lines .ln{filter:none;transform:none;text-shadow:0 0 14px rgba(58,51,47,.55);color:transparent}
+.a-lines.in .ln{color:var(--ink);text-shadow:0 0 0 rgba(58,51,47,0);transition:opacity .6s ease,color 1.1s ease,text-shadow 1.4s ease;transition-delay:calc(var(--d,0ms) + var(--k) * 150ms)}
+
+/* ---------- 지도 핀 ---------- */
+.map-pin{position:absolute;left:50%;top:calc(50% + 30px);z-index:2;width:30px;height:40px;margin:-40px 0 0 -15px;pointer-events:none;opacity:0;filter:drop-shadow(0 4px 4px rgba(60,40,20,.3))}
+.map-pin svg{width:100%;height:100%}
+.map-pin .ripple{position:absolute;left:50%;bottom:-6px;width:40px;height:14px;margin-left:-20px;border-radius:50%;border:2px solid rgba(201,162,95,.8);opacity:0}
+.map-wrap.in .map-pin{animation:pin-drop .9s cubic-bezier(.3,1.5,.5,1) .4s both}
+.map-wrap.in .map-pin .ripple{animation:ripple 1.6s ease-out 1.05s 2}
+@keyframes pin-drop{from{opacity:0;transform:translateY(-140px)}60%{opacity:1}to{opacity:1;transform:none}}
+@keyframes ripple{from{opacity:.9;transform:scale(.3)}to{opacity:0;transform:scale(1.8)}}
+
+/* ---------- 금빛 시계 (마지막 24시간) ---------- */
+.clock{margin:14px auto 0;width:150px}
+.clock[hidden],.count[hidden]{display:none}
+.clock svg{width:130px;height:130px;display:block;margin:0 auto;overflow:visible}
+.clock .face{fill:#FFFDF8;stroke:#C9A25F;stroke-width:2;filter:drop-shadow(0 3px 6px rgba(60,40,20,.15))}
+.clock .tick{stroke:#C9A25F;stroke-width:1.6;stroke-linecap:round}
+.clock .hh{stroke:var(--ink);stroke-width:3.2;stroke-linecap:round}
+.clock .mh{stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.clock .sh{stroke:#C0707C;stroke-width:1;stroke-linecap:round;transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.clock .pin{fill:#C9A25F}
+.clock p{margin:8px 0 0;font-size:14px;color:var(--muted)}
+.clock b{font-family:var(--f-en);font-size:20px;color:var(--ink);letter-spacing:.06em}
+
+/* ---------- 풍등 · 하트 · 봉투 · 종 · 빼꼼 고양이 ---------- */
+.lantern-hint{margin:-12px 0 18px;font-size:12px;color:var(--muted)}
+.lantern{position:fixed;z-index:47;width:26px;height:34px;pointer-events:none}
+.lantern i{position:absolute;inset:0;border-radius:42% 42% 30% 30%/55% 55% 40% 40%;background:radial-gradient(circle at 50% 70%,#FFF3C8 0,#FFC870 45%,#E8894A 100%);box-shadow:0 0 18px 6px rgba(255,190,100,.55),0 0 40px 12px rgba(255,170,80,.25);animation:flame .5s ease-in-out infinite alternate}
+.lantern i::after{content:"";position:absolute;left:30%;right:30%;bottom:-3px;height:5px;border-radius:2px;background:#B06A3A}
+@keyframes flame{to{filter:brightness(1.15)}}
+.heart-pop{position:fixed;z-index:52;font-size:84px;line-height:1;color:#fff;text-shadow:0 4px 18px rgba(200,80,100,.45);pointer-events:none}
+.heart-mini{position:fixed;z-index:52;font-size:16px;color:#E8899A;pointer-events:none}
+.confetti-heart{position:fixed;z-index:52;pointer-events:none;line-height:1}
+.fly-env{position:fixed;z-index:52;width:28px;height:20px;pointer-events:none}
+.fly-env svg,.bells svg{width:100%;height:100%;display:block}
+.bells{position:fixed;z-index:52;width:66px;height:44px;pointer-events:none}
+.bells .bell{transform-box:fill-box;transform-origin:50% 0}
+.bells .b1{animation:ring .5s ease-in-out 4 alternate}
+.bells .b2{animation:ring .5s ease-in-out .12s 4 alternate-reverse}
+@keyframes ring{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+.cal .on{cursor:pointer}
+.edge-cat{position:fixed;z-index:46;width:62px;height:56px;pointer-events:none}
+.edge-cat.left{left:0}
+.edge-cat.right{right:0}
+.edge-cat svg{width:100%;height:100%}
+
+@media (prefers-reduced-motion:reduce){
+  .ribbon path,.heart-line path{stroke-dashoffset:0!important;animation:none!important}
+  .ribbon circle,.map-pin{opacity:1!important;animation:none!important}
+  .a-lines .ln{color:var(--ink);text-shadow:none}
 }

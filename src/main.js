@@ -3,6 +3,7 @@ import { config as c } from './config.js';
 import { groom, bride, cat } from './characters.js';
 import { makeInvitationImage } from './saveImage.js';
 import { renderMusicBox } from './musicbox.js';
+import { timeHello, ribbon, heartLine, mapPin, clockFace, setClock, initLanterns, heartBurst, heartRain, flyEnvelope, bells, initPeekCats } from './extras.js';
 import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes, constellation, pressed, typeOut, initNap } from './effects.js';
 
 // ---------- 유틸 ----------
@@ -129,6 +130,7 @@ $('#app').innerHTML = `
         <span class="nm" aria-hidden="true">${letters(c.bride.englishName, c.groom.englishName.length + 2)}</span>
       </div>
       <div class="ko">${esc(c.groom.name)} <i>·</i> ${esc(c.bride.name)}</div>
+      ${ribbon()}
       <div class="hero-date">
         <b>${w.year}. ${pad(w.month)}. ${pad(w.day)}</b>
         <span>${DOW_KO[dow]}요일 ${timeKo}</span>
@@ -150,6 +152,7 @@ $('#app').innerHTML = `
         <span class="nm" aria-hidden="true">${letters(c.bride.englishName, c.groom.englishName.length + 2)}</span>
       </div>
       <div class="ko">${esc(c.groom.name)} <i>·</i> ${esc(c.bride.name)}</div>
+      ${ribbon()}
       <div class="hero-date">
         <b>${w.year}. ${pad(w.month)}. ${pad(w.day)}</b>
         <span>${DOW_KO[dow]}요일 ${timeKo}</span>
@@ -181,6 +184,7 @@ $('#app').innerHTML = `
       <div><span class="pa">${esc(c.groom.father)} · ${esc(c.groom.mother)}</span><span class="rel">의 ${esc(c.groom.relation.trim())}</span><b>${esc(c.groom.name)}</b></div>
       <div><span class="pa">${esc(c.bride.father)} · ${esc(c.bride.mother)}</span><span class="rel">의 ${esc(c.bride.relation.trim())}</span><b>${esc(c.bride.name)}</b></div>
     </div>
+    ${heartLine()}
     <div class="wax" aria-hidden="true"><span>${esc(fx.monogram || 'J&J')}</span></div>
   </section>
 
@@ -215,10 +219,12 @@ $('#app').innerHTML = `
     <div class="cal" id="cal"></div>
     <div class="dday" id="dday"></div>
     <div class="count" id="count"></div>
+    ${clockFace()}
   </section>
 
   <section class="rv">
     ${frostCorner('fc-tl')}${frostCorner('fc-br')}
+    ${pressed('sprig', 'pf-tl3', 16)}
     <div class="eyebrow">Location</div>
     <h2>오시는 길</h2>
     <div class="venue">${esc(c.venue.name)}</div>
@@ -226,6 +232,7 @@ $('#app').innerHTML = `
     <div class="addr">${esc(c.venue.detail)}${c.venue.tel ? ` · Tel. ${esc(c.venue.tel)}` : ''}</div>
     <div class="map-wrap">
     ${cat('cheeseTabby', 'cat-peek')}
+    ${mapPin()}
     <div class="map">
       <iframe src="https://maps.google.com/maps?q=${encodeURIComponent(c.venue.address)}&z=16&output=embed" title="${esc(c.venue.name)} 지도" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
@@ -246,6 +253,7 @@ $('#app').innerHTML = `
       ? `<section class="rv">
     ${frostCorner('fc-tl')}${frostCorner('fc-br')}
     ${cat('cow', 'cat-acct')}
+    ${pressed('leaf', 'pf-bl2', 28)}
     <div class="eyebrow">With Heart</div>
     <h2>마음 전하실 곳</h2>
     <div class="note">${lines(c.accounts.note)}</div>
@@ -256,7 +264,9 @@ $('#app').innerHTML = `
   }
 
   <section class="foot rv">
+    ${pressed('flower', 'pf-tr3', 24)}${pressed('flower', 'pf-tl4', -40)}
     ${constellation()}
+    <p class="lantern-hint">화면을 톡 누르면 풍등이 날아올라요</p>
     ${lights()}
     <div class="family" aria-hidden="true">
       <div class="couple">${groom()}<span class="fam-heart" aria-hidden="true">♥</span>${bride()}</div>
@@ -281,6 +291,7 @@ $('#app').innerHTML = `
   <button class="lb-btn lb-prev" type="button" id="lbPrev" aria-label="이전 사진">&#8249;</button>
   <button class="lb-btn lb-next" type="button" id="lbNext" aria-label="다음 사진">&#8250;</button>
   <div class="lb-count" id="lbCount"></div>
+  <div class="lb-hint" aria-hidden="true">아래로 쓸어내리면 닫혀요</div>
 </div>
 <div class="save-modal" id="saveModal" hidden role="dialog" aria-modal="true" aria-label="청첩장 사진으로 저장">
   <div class="sm-box">
@@ -363,6 +374,11 @@ function tick() {
   if (mode === 'dday' && diff > 86400000) { $('#count').innerHTML = ''; return; }
   const s = Math.floor(diff / 1000);
   const D = Math.floor(s / 86400), H = Math.floor((s % 86400) / 3600), M = Math.floor((s % 3600) / 60), S = s % 60;
+  // 예식 24시간 전부터는 숫자판 대신 금빛 시계 (주소 끝에 ?clock 을 붙이면 미리보기)
+  const lastDay = D === 0 || new URLSearchParams(location.search).has('clock');
+  $('#clock').hidden = !lastDay;
+  $('#count').hidden = lastDay;
+  if (lastDay) setClock(H, M, S);
   daysLeft = D + 1;
   if (!ddayCounting && $('#ddayNum')) $('#ddayNum').textContent = `${daysLeft}일`;
   // 바뀐 숫자만 공항 안내판처럼 착 넘어감
@@ -386,7 +402,11 @@ initFog(reduceMotion);
 initTitleSnow(reduceMotion);
 initEyes(reduceMotion);
 initCatPoke();
-initNap(reduceMotion, 5000);
+initNap(reduceMotion, 2000);
+initLanterns(reduceMotion);
+initPeekCats(cat, reduceMotion);
+// 달력 20일을 누르면 웨딩벨
+$('.cal .on')?.addEventListener('click', (e) => { if (!reduceMotion) bells(e.currentTarget); });
 
 // ---------- 처음 열 때: 시네마틱 오프닝 — 가운데 금선 → 이름·날짜가 차례로 올라옴 → 화면이 위아래로 갈라지며 사진 (누르면 바로 넘어감) ----------
 (() => {
@@ -395,7 +415,7 @@ initNap(reduceMotion, 5000);
   root.classList.add('intro-on');  // 그동안 첫 화면 애니메이션은 멈춰 두었다가 끝나면 시작
   const el = document.createElement('div');
   el.className = 'intro cine';
-  el.innerHTML = `<div class="cine-top"><div class="cine-txt"><small>${esc(heroEyebrow)}</small><b>${esc(c.groom.englishName)} <em>&amp;</em> ${esc(c.bride.englishName)}</b></div></div>
+  el.innerHTML = `<div class="cine-top"><div class="cine-txt"><span class="cine-hi">${esc(timeHello())}</span><small>${esc(heroEyebrow)}</small><b>${esc(c.groom.englishName)} <em>&amp;</em> ${esc(c.bride.englishName)}</b></div></div>
     <div class="cine-bot"><div class="cine-txt"><span>${w.year}. ${pad(w.month)}. ${pad(w.day)}</span></div></div>
     <i class="cine-line"></i>`;
   document.body.appendChild(el);
@@ -431,7 +451,7 @@ const REVEAL = [
       if (delay) el.style.setProperty('--d', `${delay(i)}ms`);
     })
   );
-  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, .lights, .frost-corner, .pressed, .wax, section:not(.hero)');
+  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, .lights, .frost-corner, .pressed, .wax, .map-wrap, section:not(.hero)');
   if (reduceMotion || !('IntersectionObserver' in window)) {
     els.forEach((el) => el.classList.add('in'));
     return;
@@ -541,6 +561,13 @@ function countUpDday() {
   let hitH = 0;
   const ctx = cv.getContext('2d');
   let W = 0, H = 0, flakes = [], bursts = [], last = 0, time = 0;
+  // 빠르게 스크롤하면 눈송이가 바람에 휩쓸리듯 휘날림
+  let swirl = 0, lastScroll = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    swirl = Math.max(-40, Math.min(40, swirl + (y - lastScroll) * 0.25));
+    lastScroll = y;
+  }, { passive: true });
 
   // 쌓인 눈: STEP px 간격마다 높이
   const STEP = 3, BASE = 15, MAX = 42;
@@ -810,10 +837,12 @@ function countUpDday() {
     time += dt;
     // 잔잔한 바람 + 가끔 부는 돌풍
     const gust = Math.max(0, Math.sin(time * 0.23) - 0.55) * 90;
+    swirl *= 0.9;
     const wind = 6 + Math.sin(time * 0.37) * 16 + gust;
     ctx.clearRect(0, 0, W, H);
     for (const f of flakes) {
-      f.y += f.v * dt;
+      f.y += f.v * dt - swirl * f.z * 0.5;
+      f.x += Math.sin(f.ph * 2) * swirl * 0.06;
       f.ph += dt * (0.6 + f.z * 0.5);
       f.x += wind * f.z * dt;
       f.rot += f.spin * dt;
@@ -945,18 +974,24 @@ function countUpDday() {
       ], { duration: 320, easing: 'cubic-bezier(.2,.6,.3,1)' });
     });
   };
+  // 열 때 방문 기록을 하나 쌓아 두어서, 휴대폰 뒤로가기를 누르면 페이지를 나가지 않고 사진만 닫힘
   const open = (i) => {
     lastFocus = document.activeElement;
     show(i);
     lb.hidden = false;
+    lb.style.transform = '';
     document.body.style.overflow = 'hidden';
+    if (!history.state?.lb) history.pushState({ lb: 1 }, '');
     $('#lbClose').focus();
   };
-  const close = () => {
+  const hide = () => {
+    if (lb.hidden) return;
     lb.hidden = true;
     document.body.style.overflow = '';
     lastFocus?.focus();
   };
+  const close = () => { if (history.state?.lb) history.back(); else hide(); };
+  window.addEventListener('popstate', hide);
   // 옆으로 넘기는 폴라로이드: 가운데 사진은 반듯하고 크게, 옆 사진은 기울고 작고 흐리게
   // 위아래로 미는 건 브라우저가 그대로 페이지를 스크롤하고(touch-action: pan-y), 좌우로 미는 것만 직접 받아서 넘김
   const box = $('#gallery'), track = box.firstElementChild, slides = [...track.querySelectorAll('.slide')];  // n: 위에서 센 사진 수
@@ -975,7 +1010,7 @@ function countUpDday() {
       const d = (centerOf(i) + offset - mid) / s.offsetWidth;
       const k = Math.min(Math.abs(d), 1);
       const card = s.firstElementChild;
-      card.style.transform = `translateY(${k * 18}px) rotate(${Math.max(-1, Math.min(1, d)) * 7}deg) scale(${1 - k * 0.14})`;
+      card.style.transform = `perspective(700px) translateY(${k * 18}px) rotate(${Math.max(-1, Math.min(1, d)) * 7}deg) scale(${1 - k * 0.14}) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg))`;
       card.style.opacity = String(1 - k * 0.45);
       card.style.setProperty('--sh', `${(Math.max(-1, Math.min(1, d)) * 130).toFixed(1)}%`);
       card.style.setProperty('--sho', (1 - k).toFixed(2));
@@ -1036,14 +1071,30 @@ function countUpDday() {
   $('#gPrev').addEventListener('click', () => go(active - 1));
   $('#gNext').addEventListener('click', () => go(active + 1));
   // 가운데 사진을 누르면 크게 보기, 옆 사진을 누르면 그 사진으로 넘김 (끌어서 넘긴 직후의 클릭은 무시)
+  let tapTimer = 0;
   box.addEventListener('click', (e) => {
     if (moved) { moved = false; return; }
     const s = e.target.closest('.slide');
     if (!s) return;
     const i = Number(s.dataset.i);
-    if (i === active) open(i);
-    else go(i);
+    if (i !== active) { go(i); return; }
+    // 두 번 톡톡 누르면 하트, 한 번이면 잠깐 기다렸다가 크게 보기
+    if (tapTimer) { clearTimeout(tapTimer); tapTimer = 0; heartBurst(e.clientX, e.clientY); return; }
+    tapTimer = setTimeout(() => { tapTimer = 0; open(i); }, 280);
   });
+  // 가운데 사진을 누르고 있으면 손가락 쪽으로 살짝 기울어짐 (마우스는 올리기만 해도)
+  const tilt = (e, on) => {
+    const card = slides[active].firstElementChild, r = card.getBoundingClientRect();
+    if (!on || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
+      card.style.setProperty('--tx', '0deg'); card.style.setProperty('--ty', '0deg');
+      return;
+    }
+    card.style.setProperty('--ty', `${(((e.clientX - r.left) / r.width - 0.5) * 16).toFixed(1)}deg`);
+    card.style.setProperty('--tx', `${((0.5 - (e.clientY - r.top) / r.height) * 12).toFixed(1)}deg`);
+  };
+  box.addEventListener('pointerdown', (e) => tilt(e, true));
+  box.addEventListener('pointermove', (e) => tilt(e, e.pointerType === 'mouse' || (drag && !moved)));
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => box.addEventListener(ev, (e) => tilt(e, false)));
   $('#lbClose').addEventListener('click', close);
   $('#lbPrev').addEventListener('click', () => show(cur - 1, true));
   $('#lbNext').addEventListener('click', () => show(cur + 1, true));
@@ -1056,12 +1107,27 @@ function countUpDday() {
   });
   // 좌우로 밀어서 넘기기
   let sx = null;
-  lb.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; }, { passive: true });
+  // 좌우로 밀면 넘기고, 아래로 쓸어내리면 사진이 따라 내려가다 닫힘
+  let sy = 0;
+  lb.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  lb.addEventListener('touchmove', (e) => {
+    if (sx === null) return;
+    const dy = e.touches[0].clientY - sy, dx = e.touches[0].clientX - sx;
+    if (dy > 0 && dy > Math.abs(dx)) {
+      img.style.transition = 'none';
+      img.style.transform = `translateY(${dy}px) scale(${Math.max(0.85, 1 - dy / 900)})`;
+      lb.style.backgroundColor = `rgba(18,18,24,${Math.max(0.35, 0.94 - dy / 500)})`;
+    }
+  }, { passive: true });
   lb.addEventListener('touchend', (e) => {
     if (sx === null) return;
-    const dx = e.changedTouches[0].clientX - sx;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
     sx = null;
-    if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1), true);
+    img.style.transition = '';
+    img.style.transform = '';
+    lb.style.backgroundColor = '';
+    if (dy > 90 && dy > Math.abs(dx)) close();
+    else if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1), true);
   });
 })();
 
@@ -1093,9 +1159,9 @@ function copy(text, msg) {
 
 $('#copyAddr').addEventListener('click', () => copy(c.venue.address, '주소를 복사했어요'));
 document.querySelectorAll('[data-copy]').forEach((b) =>
-  b.addEventListener('click', () => { pawStamp(b); copy(b.dataset.copy, '계좌번호를 복사했어요'); })
+  b.addEventListener('click', () => { pawStamp(b); flyEnvelope(b); copy(b.dataset.copy, '계좌번호를 복사했어요'); })
 );
-$('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 링크를 복사했어요'));
+$('#copyLink').addEventListener('click', (e) => { heartRain(e.currentTarget); copy(location.href, '청첩장 링크를 복사했어요'); });
 
 // ---------- 청첩장 사진으로 저장: 중요한 정보를 한 장의 이미지로 만들어 보여 주고 저장/공유 ----------
 (() => {
@@ -1125,13 +1191,16 @@ $('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 �
       }
       $('#toast').classList.remove('show');
       modal.hidden = false;
+      if (!history.state?.save) history.pushState({ save: 1 }, '');
       document.body.style.overflow = 'hidden';
     } catch (e) {
       toast('이미지를 만들지 못했어요. 화면을 캡처해 주세요');
     }
     busy = false;
   });
-  const close = () => { modal.hidden = true; document.body.style.overflow = ''; };
+  const hide = () => { if (modal.hidden) return; modal.hidden = true; document.body.style.overflow = ''; };
+  const close = () => { if (history.state?.save) history.back(); else hide(); };
+  window.addEventListener('popstate', hide);
   $('#saveClose').addEventListener('click', close);
   modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
   $('#saveDl').addEventListener('click', () => {
@@ -1175,7 +1244,8 @@ function kakaoShare(url) {
   }
   return true;
 }
-$('#share').addEventListener('click', async () => {
+$('#share').addEventListener('click', async (e) => {
+  if (!reduceMotion) heartRain(e.currentTarget);
   const url = location.origin + location.pathname;
   if (kakaoShare(url)) return;
   const data = { title: c.meta.title, text: c.meta.description, url };
