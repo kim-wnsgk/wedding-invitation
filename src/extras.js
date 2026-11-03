@@ -38,21 +38,30 @@ export const heartLine = () => `<svg class="heart-line" viewBox="0 0 320 70" ari
 // ---------- 지도 위로 금빛 핀이 톡 떨어져 꽂힘 ----------
 export const mapPin = () => `<div class="map-pin" aria-hidden="true"><i class="ripple"></i><svg viewBox="0 0 30 40"><path d="M15 39S2 23 2 14a13 13 0 0 1 26 0c0 9-13 25-13 25Z" fill="#C9A25F" stroke="#fff" stroke-width="2"/><circle cx="15" cy="14" r="5" fill="#fff"/></svg></div>`;
 
-// ---------- 마지막 24시간: 금빛 아날로그 시계 ----------
+// ---------- 마지막 24시간: 모래시계 (위 모래 = 남은 시간, 아래로 졸졸 흘러내림) ----------
+const UP = 'M14 8C14 30 28 38 28 45H32C32 38 46 30 46 8Z';   // 위쪽 유리
+const DOWN = 'M28 45C28 52 14 60 14 82H46C46 60 32 52 32 45Z'; // 아래쪽 유리
 export const clockFace = () => `<div class="clock" id="clock" hidden>
-  <svg viewBox="-50 -50 100 100" aria-hidden="true">
-    <circle r="46" class="face"/>${Array.from({ length: 12 }, (_, i) => `<path class="tick" d="M0-41V-36" transform="rotate(${i * 30})"/>`).join('')}
-    <path class="hh" d="M0 4V-22"/><path class="mh" d="M0 5V-32"/><path class="sh" d="M0 8V-38"/><circle r="2.6" class="pin"/>
+  <svg viewBox="0 0 60 90" aria-hidden="true">
+    <defs><clipPath id="hgUp"><path d="${UP}"/></clipPath><clipPath id="hgDown"><path d="${DOWN}"/></clipPath></defs>
+    <path class="glass" d="M14 8C14 30 28 38 28 45S14 60 14 82H46C46 60 32 52 32 45S46 30 46 8Z"/>
+    <rect class="sand" id="hgTop" clip-path="url(#hgUp)" x="10" width="40" y="8" height="37"/>
+    <rect class="sand" id="hgBottom" clip-path="url(#hgDown)" x="10" width="40" y="82" height="0"/>
+    <path class="stream" d="M30 45V82"/>
+    <rect class="frame" x="6" y="2" width="48" height="6" rx="2"/><rect class="frame" x="6" y="82" width="48" height="6" rx="2"/>
+    <path class="post" d="M10 8V82M50 8V82"/>
   </svg>
   <p id="clockText"></p>
 </div>`;
-export function setClock(h, m, s) {
-  const r = (sel, deg) => document.querySelector(`#clock .${sel}`)?.setAttribute('transform', `rotate(${deg})`);
-  r('hh', (h % 12) * 30 + m * 0.5);
-  r('mh', m * 6 + s * 0.1);
-  r('sh', s * 6);
+// frac: 남은 비율 (24시간 = 1)
+export function setClock(h, m, s, frac) {
+  const f = Math.max(0, Math.min(1, frac)), top = 37 * f, bottom = 37 * (1 - f);
+  document.querySelector('#hgTop')?.setAttribute('y', String(45 - top));
+  document.querySelector('#hgTop')?.setAttribute('height', String(top));
+  document.querySelector('#hgBottom')?.setAttribute('y', String(82 - bottom));
+  document.querySelector('#hgBottom')?.setAttribute('height', String(bottom));
   const t = document.querySelector('#clockText');
-  if (t) t.innerHTML = `예식까지 <b>${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}</b>`;
+  if (t) t.innerHTML = `예식까지 <b>${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}</b> 남았어요`;
 }
 
 // ---------- 맨 아래에서 누르면 풍등이 하나씩 떠오름 ----------

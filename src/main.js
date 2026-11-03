@@ -4,7 +4,7 @@ import { groom, bride, cat } from './characters.js';
 import { makeInvitationImage } from './saveImage.js';
 import { renderMusicBox } from './musicbox.js';
 import { timeHello, ribbon, heartLine, mapPin, clockFace, setClock, initLanterns, heartBurst, heartRain, flyEnvelope, bells, initPeekCats } from './extras.js';
-import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes, constellation, pressed, typeOut, initNap } from './effects.js';
+import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, frostCorner, initTitleSnow, initEyes, constellation, pressed, typeOut, initNap } from './effects.js';
 
 // ---------- 유틸 ----------
 const $ = (sel) => document.querySelector(sel);
@@ -374,11 +374,11 @@ function tick() {
   if (mode === 'dday' && diff > 86400000) { $('#count').innerHTML = ''; return; }
   const s = Math.floor(diff / 1000);
   const D = Math.floor(s / 86400), H = Math.floor((s % 86400) / 3600), M = Math.floor((s % 3600) / 60), S = s % 60;
-  // 예식 24시간 전부터는 숫자판 대신 금빛 시계 (주소 끝에 ?clock 을 붙이면 미리보기)
+  // 예식 24시간 전부터는 숫자판 대신 모래시계 (주소 끝에 ?clock 을 붙이면 미리보기)
   const lastDay = D === 0 || new URLSearchParams(location.search).has('clock');
   $('#clock').hidden = !lastDay;
   $('#count').hidden = lastDay;
-  if (lastDay) setClock(H, M, S);
+  if (lastDay) setClock(H, M, S, (H * 3600 + M * 60 + S) / 86400);
   daysLeft = D + 1;
   if (!ddayCounting && $('#ddayNum')) $('#ddayNum').textContent = `${daysLeft}일`;
   // 바뀐 숫자만 공항 안내판처럼 착 넘어감
@@ -397,8 +397,7 @@ function tick() {
 tick();
 setInterval(tick, 1000);
 
-// ---------- 고양이 반응 · 입김 · 제목 눈송이 · 고양이 눈동자 ----------
-initFog(reduceMotion);
+// ---------- 고양이 반응 · 제목 눈송이 · 고양이 눈동자 ----------
 initTitleSnow(reduceMotion);
 initEyes(reduceMotion);
 initCatPoke();
