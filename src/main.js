@@ -51,6 +51,16 @@ const galleryThumb = byName(
 // ---------- 메타 ----------
 document.title = c.meta.title;
 
+// ---------- 편지 봉투: 맨 위에서는 열리고, 맨 아래에서는 닫혀 봉해짐 ----------
+// 쌓는 순서: 뒷면 → (열린 덮개) → 카드 → 앞 주머니 → (닫힌 덮개) → 실링
+const envelope = (cls, card, front = '') => `<div class="env ${cls}" aria-hidden="true">
+  <div class="env-back"></div>
+  <div class="env-card">${card}</div>
+  <div class="env-front">${front}</div>
+  <div class="env-flap"></div>
+  <div class="env-seal">${esc(fx.monogram || 'J&J')}</div>
+</div>`;
+
 // ---------- 첫 화면 사진 아래 쌓인 눈 (뒤·앞 두 겹의 눈 언덕 + 반짝임) ----------
 function drift(cls) {
   const sparkles = [[12, 62], [27, 48], [44, 70], [58, 52], [73, 66], [88, 50]]
@@ -230,6 +240,7 @@ $('#app').innerHTML = `
       <button class="link-btn" type="button" id="share">공유하기</button>
       <button class="link-btn" type="button" id="copyLink">링크 복사</button>
     </div>
+    ${envelope('env-close', '<em>Thank you</em><i>♥</i>')}
   </section>
 </main>
 <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="사진 크게 보기">
@@ -321,6 +332,30 @@ function tick() {
 tick();
 setInterval(tick, 1000);
 
+// ---------- 처음 열 때: 봉투의 실링이 떨어지고 덮개가 열리며 청첩장 카드가 나옴 (누르면 바로 넘어감) ----------
+(() => {
+  if (reduceMotion) return;
+  const root = document.documentElement;
+  root.classList.add('intro-on');  // 그동안 첫 화면 애니메이션은 멈춰 두었다가 끝나면 시작
+  const el = document.createElement('div');
+  el.className = 'intro';
+  el.innerHTML = envelope(
+    'env-open',
+    `<small>${esc(fx.eyebrow || 'The Wedding of')}</small><b>${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</b><small>${w.year}. ${pad(w.month)}. ${pad(w.day)}</small>`,
+    '<span>소중한 분께</span>'
+  );
+  document.body.appendChild(el);
+  const done = () => {
+    if (!el.isConnected) return;
+    root.classList.remove('intro-on');
+    el.remove();
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('go')));
+  el.addEventListener('animationend', (e) => { if (e.target === el) done(); });
+  el.addEventListener('click', done);
+  setTimeout(done, 4500);
+})();
+
 // ---------- 스크롤 등장 효과 ----------
 // [선택자, 등장 방식, 순서별 지연(ms)] — 방식: up 아래에서 / left·right 옆에서 / zoom 커지며 / blur 흐림→선명
 //   / track 자간이 좁혀지며 / frost 성에 낀 듯 뿌옇다가 녹으며 선명 / lines 한 줄씩 차례로
@@ -344,7 +379,7 @@ const REVEAL = [
       if (delay) el.style.setProperty('--d', `${delay(i)}ms`);
     })
   );
-  const els = document.querySelectorAll('.a, .cal, .seal-foot, section:not(.hero)');
+  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, section:not(.hero)');
   if (reduceMotion || !('IntersectionObserver' in window)) {
     els.forEach((el) => el.classList.add('in'));
     return;

@@ -200,8 +200,8 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 .since text{font-family:var(--f-en);font-size:13px;font-weight:500;fill:var(--rose);letter-spacing:.06em}
 .since figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 /* 부모님 줄: 두 줄의 [부모님 | 의 아들/딸 | 이름] 칸을 같은 너비로 맞춤 */
-.parents{display:grid;gap:10px;margin-top:32px;font-size:15px}
-.parents>div{display:grid;grid-template-columns:1fr 4.2em 1fr;align-items:baseline;column-gap:4px}
+.parents{display:grid;grid-template-columns:auto 4.2em auto;justify-content:center;gap:10px 4px;margin-top:32px;font-size:15px}
+.parents>div{grid-column:1/-1;display:grid;grid-template-columns:max-content 4.2em max-content;justify-content:center;grid-template-columns:subgrid;align-items:baseline}  /* subgrid: 두 줄이 같은 칸 너비를 써서 정렬된 채로 전체가 가운데 */
 .parents .pa{text-align:right;white-space:nowrap}
 .parents b{font-weight:700;text-align:left;white-space:nowrap}
 .parents .rel{color:var(--muted);font-size:13px;text-align:center;white-space:nowrap}
@@ -319,3 +319,48 @@ details[open] .acct:nth-of-type(3){animation-delay:.16s}
   .a-lines .ln{transition:none!important}
   .walk *,.cat *,.ch *,.family *{animation:none!important}
 }
+
+/* ---------- 편지 봉투 (맨 위: 열림 / 맨 아래: 닫힘) ---------- */
+.env{position:relative;width:var(--env-w,300px);aspect-ratio:1.5;margin:0 auto;perspective:900px}
+.env>div{position:absolute;border-radius:6px}
+.env-back{inset:0;z-index:0;background:#EFDFDB;box-shadow:0 14px 34px rgba(46,43,56,.18),0 2px 4px rgba(46,43,56,.06)}
+.env-card{left:7%;right:7%;top:7%;bottom:6%;z-index:2;background:#FFFEFC;border-radius:4px;box-shadow:0 1px 5px rgba(46,43,56,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+/* 앞 주머니: 위가 V자로 파인 모양 + 아래 접힌 면 */
+.env-front{inset:0;z-index:3;background:linear-gradient(160deg,#F6EAE7,#F1E1DD);clip-path:polygon(0 0,50% 56%,100% 0,100% 100%,0 100%);display:flex;align-items:flex-end;justify-content:center;padding-bottom:9%}
+.env-front::before{content:"";position:absolute;inset:0;background:#EBD6D1;clip-path:polygon(0 100%,50% 52%,100% 100%);opacity:.55}
+.env-front span{position:relative;font-size:13px;letter-spacing:.12em;color:#9B6B73}
+.env-flap{left:0;right:0;top:0;height:60%;z-index:4;background:linear-gradient(180deg,#EAD3CE,#E3C7C1);clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:50% 0;border-radius:6px 6px 0 0}
+.env-seal{left:50%;top:60%;width:22%;aspect-ratio:1;z-index:5;transform:translate(-50%,-50%);border-radius:50%!important;display:grid;place-items:center;
+  background:radial-gradient(circle at 36% 30%,#CF93A0,#A8616E 55%,#7E4250);color:rgba(255,255,255,.92);font-family:var(--f-en);font-size:calc(var(--env-w,300px) * .06);box-shadow:0 2px 5px rgba(126,66,80,.4),inset 0 0 0 3px rgba(0,0,0,.08)}
+
+/* 맨 위: 화면 가득 봉투 → 실링이 떨어지고 덮개가 열리고 카드가 나온 뒤, 카드 속으로 들어가듯 사라짐 */
+html.intro-on{overflow:hidden}
+.intro-on .hero,.intro-on .hero *,.intro-on .hero *::before{animation-play-state:paused!important}
+.intro{position:fixed;inset:0;z-index:48;display:grid;place-items:center;cursor:pointer;
+  background:var(--paper) radial-gradient(circle at 50% 40%,#FFFFFF,var(--paper) 70%)}
+.intro .env{--env-w:min(78vw,330px)}
+.env-open .env-card b{font-family:var(--f-en);font-weight:500;font-size:calc(var(--env-w) * .085);color:var(--ink);line-height:1.2}
+.env-open .env-card small{font-family:var(--f-en);font-size:calc(var(--env-w) * .036);letter-spacing:.22em;text-transform:uppercase;color:var(--rose)}
+.intro.go .env{animation:env-in .6s cubic-bezier(.2,.7,.2,1) both,env-zoom .7s cubic-bezier(.5,0,.3,1) 2.45s both}
+.intro.go .env-seal{animation:seal-off .5s ease .6s both}
+.intro.go .env-flap{animation:flap-open .75s ease-in-out .95s both}
+.intro.go .env-card{animation:card-out .85s cubic-bezier(.2,.75,.2,1) 1.55s both}
+.intro.go{animation:intro-out .7s ease 2.5s both}
+@keyframes env-in{from{opacity:0;transform:translateY(24px) scale(.94)}}
+@keyframes seal-off{30%{transform:translate(-50%,-50%) scale(1.15)}to{opacity:0;transform:translate(-50%,-30%) scale(.5) rotate(25deg)}}
+@keyframes flap-open{0%{transform:rotateX(0);z-index:4}49%{z-index:4}50%,100%{z-index:1}100%{transform:rotateX(180deg)}}
+@keyframes card-out{to{transform:translateY(-56%)}}
+@keyframes env-zoom{to{transform:scale(1.35);opacity:0}}
+@keyframes intro-out{to{opacity:0;visibility:hidden}}
+
+/* 맨 아래: 열린 봉투에 Thank you 카드가 들어가고 → 덮개가 닫히고 → 실링이 쿵 */
+.env-close{--env-w:170px;margin-top:84px}
+.env-close .env-card em{font-family:var(--f-en);font-size:19px;color:var(--ink)}
+.env-close .env-card i{font-style:normal;color:var(--rose);font-size:12px}
+.env-close .env-card{transform:translateY(-58%)}
+.env-close .env-flap{transform:rotateX(180deg);z-index:1}
+.env-close .env-seal{opacity:0;transform:translate(-50%,-50%) scale(1.8)}
+.env-close.in .env-card{transform:none;transition:transform .8s cubic-bezier(.5,0,.2,1) .25s}
+.env-close.in .env-flap{transform:rotateX(0);z-index:4;transition:transform .65s ease-in-out 1.05s,z-index 0s linear 1.3s}
+.env-close.in .env-seal{opacity:1;transform:translate(-50%,-50%) scale(1);transition:transform .45s cubic-bezier(.3,1.7,.5,1) 1.7s,opacity .15s ease 1.7s}
+@media (prefers-reduced-motion:reduce){.env-close>div{transition:none!important}}
