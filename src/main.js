@@ -119,11 +119,7 @@ $('#app').innerHTML = `
     <div class="cover"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high">
       <div class="bokeh" aria-hidden="true">${[[12, 16, 0], [26, 9, 3.5], [44, 22, 1.2], [58, 12, 6], [70, 18, 2.4], [84, 10, 4.6], [36, 14, 7.8], [92, 20, 5.4], [6, 11, 8.6]]
         .map(([x, s, d]) => `<i style="left:${x}%;--s:${s}px;--d:${d}s;--t:${(10 + (x % 5)).toFixed(0)}s"></i>`).join('')}</div>
-      <div class="mag" aria-hidden="true">
-        <div class="mag-head"><b>${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</b><small>The Wedding Issue · Winter ${w.year}</small></div>
-        <div class="mag-side">Save the Date</div>
-        <div class="mag-date"><span>${pad(w.month)}</span><i></i><span>${pad(w.day)}</span></div>
-      </div>${drift('drift-cover')}</div>
+      <div class="mag" aria-hidden="true"></div>${drift('drift-cover')}</div>
     <div class="hero-in">
       <div class="save foil">${esc(heroEyebrow)}</div>
       <div class="names">

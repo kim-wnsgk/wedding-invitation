@@ -541,9 +541,7 @@ section h2{position:relative}
 @keyframes cine-open-bot{to{transform:translateY(100%)}}
 
 /* ---------- ① 매거진 커버 ---------- */
-.mag{position:absolute;inset:0;z-index:3;pointer-events:none;color:#fff;text-shadow:0 1px 2px rgba(30,28,36,.45),0 0 16px rgba(30,28,36,.28)}
-/* 글자 뒤 옅은 그늘: 위쪽 제호 · 왼쪽 날짜 */
-.mag::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(30,28,36,.36) 0%,rgba(30,28,36,0) 30%),radial-gradient(70% 40% at 0% 72%,rgba(30,28,36,.34),rgba(30,28,36,0) 70%)}
+.mag{position:absolute;inset:0;z-index:3;pointer-events:none}  /* 사진 둘레 얇은 흰 프레임 */
 .mag::before{content:"";position:absolute;inset:12px 12px 26px;border:1px solid rgba(255,255,255,.75)}
 .mag-head{position:absolute;left:0;right:0;top:54px;text-align:center}
 .mag-head b{display:block;font-family:var(--f-name);font-weight:700;font-size:18px;letter-spacing:.36em;text-transform:uppercase;padding-left:.42em}
