@@ -170,7 +170,7 @@ export async function makeInvitationImage({ c, w, dow, dowKo, timeKo, photo, gro
   try {
     const [gi, bi, ...cats] = await Promise.all([svgImg(groom()), svgImg(bride()),
       ...['whiteLong', 'tortie', 'cheeseTabby', 'yellowSpot1', 'yellowSpot2', 'calico', 'cow', 'black'].map((k) => svgImg(cat(k)))]);
-    const base = H - 130;
+    const base = H - 110;
     ctx.drawImage(gi, W / 2 - 92, base - 150, 84, 134);
     ctx.drawImage(bi, W / 2 + 8, base - 150, 84, 134);
     ctx.fillStyle = ROSE;
@@ -191,5 +191,8 @@ export async function makeInvitationImage({ c, w, dow, dowKo, timeKo, photo, gro
     ctx.fillText(siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''), W / 2, H - 56);
   }
 
-  return new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.92));
+  // dataUrl: 이미지 자체를 담은 주소 — 카카오톡 같은 앱 안 브라우저에서도 길게 눌러 저장·다운로드가 제대로 됨
+  const dataUrl = cv.toDataURL('image/jpeg', 0.9);
+  const blob = await new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.9));
+  return { blob, dataUrl };
 }

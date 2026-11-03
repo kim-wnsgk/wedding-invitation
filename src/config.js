@@ -95,6 +95,7 @@ export const config = {
   effects: {
     eyebrow: 'The Wedding of',  // 첫 화면 맨 위 영문 문구
     monogram: 'J&J',   // 첫 화면 왁스 실링에 새길 이니셜
+    music: true,       // 배경음악 버튼 (music 폴더가 비어 있으면 청첩장 전용 오르골 곡, false 로 끄기)
     snow: true,        // 첫 화면에 눈 내리는 효과 (false 로 끄기)
   },
 };

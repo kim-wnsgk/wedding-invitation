@@ -18,82 +18,6 @@ export function getMode(w) {
   return today < day ? 'before' : today === day ? 'dday' : 'after';
 }
 
-// ---------- 성에 낀 대표 사진: 문지르면 닦이고, 시간이 지나면 저절로 녹음 ----------
-export function initFrost(cover, reduceMotion) {
-  if (!cover || reduceMotion) return;
-  const cv = document.createElement('canvas');
-  cv.className = 'frost';
-  cv.setAttribute('aria-hidden', 'true');
-  cover.append(cv);
-  const ctx = cv.getContext('2d');
-  let W = 0, H = 0;
-
-  function paint() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = cover.clientWidth;
-    H = cover.clientHeight;
-    cv.width = W * dpr;
-    cv.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // 뿌연 유리
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, 'rgba(236,242,247,.66)');
-    g.addColorStop(1, 'rgba(244,247,250,.52)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-    // 얼음 알갱이
-    for (let i = 0; i < (W * H) / 90; i++) {
-      ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.45})`;
-      ctx.fillRect(Math.random() * W, Math.random() * H, 1.2, 1.2);
-    }
-    // 가장자리부터 자라는 성에 무늬(고사리 잎 모양)
-    ctx.strokeStyle = 'rgba(255,255,255,.55)';
-    ctx.lineCap = 'round';
-    const fern = (x, y, ang, len, depth) => {
-      if (depth <= 0 || len < 3) return;
-      const x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len;
-      ctx.lineWidth = depth * 0.45;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke();
-      fern(x2, y2, ang + (Math.random() - 0.5) * 0.5, len * 0.78, depth - 1);
-      fern(x + (x2 - x) * 0.5, y + (y2 - y) * 0.5, ang - 0.9, len * 0.45, depth - 1);
-      fern(x + (x2 - x) * 0.6, y + (y2 - y) * 0.6, ang + 0.9, len * 0.42, depth - 1);
-    };
-    for (let i = 0; i < 9; i++) {
-      const side = i % 4, t = Math.random();
-      const [x, y, a] = side === 0 ? [t * W, 0, Math.PI / 2] : side === 1 ? [W, t * H, Math.PI] : side === 2 ? [0, t * H, 0] : [t * W, H * 0.7, -Math.PI / 2];
-      fern(x, y, a + (Math.random() - 0.5) * 0.8, 26 + Math.random() * 30, 5);
-    }
-  }
-  // 손가락이 지나간 자리를 부드러운 붓으로 지움
-  function wipe(x, y) {
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-out';
-    const r = 30, g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(0,0,0,.9)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-  }
-  let lastX = null, lastY = null;
-  const move = (cx, cy) => {
-    const r = cv.getBoundingClientRect(), x = cx - r.left, y = cy - r.top;
-    if (lastX !== null) {
-      const d = Math.hypot(x - lastX, y - lastY), n = Math.ceil(d / 8);
-      for (let i = 1; i <= n; i++) wipe(lastX + ((x - lastX) * i) / n, lastY + ((y - lastY) * i) / n);
-    } else wipe(x, y);
-    lastX = x; lastY = y;
-  };
-  cover.addEventListener('touchmove', (e) => move(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-  cover.addEventListener('touchstart', (e) => { lastX = null; move(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-  cover.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') move(e.clientX, e.clientY); });
-  cover.addEventListener('pointerleave', () => { lastX = null; });
-  paint();
-  // 7초 뒤부터 서서히 녹아 사라짐
-  setTimeout(() => cv.classList.add('melt'), 7000);
-  cv.addEventListener('transitionend', () => cv.remove());
-}
-
 // ---------- 스크롤할수록 아침 → 한낮 → 노을 → 겨울밤 (바탕색이 아주 은은하게) + 밤에는 별 ----------
 const SKY = [[0, [255, 254, 252]], [0.35, [255, 251, 244]], [0.62, [253, 243, 239]], [0.84, [242, 241, 248]], [1, [236, 239, 247]]];
 let stars = null, lastSky = -1;
@@ -115,6 +39,18 @@ export function setSky(p, reduceMotion) {
     document.body.appendChild(stars);
   }
   stars.style.opacity = Math.max(0, (p - 0.72) / 0.28).toFixed(3);
+
+}
+
+// ---------- 별자리 이니셜: 맨 아래 밤하늘에서 별들이 선으로 이어져 'J ♥ J' ----------
+export function constellation() {
+  const J = (ox) => [[ox + 10, 8], [ox + 34, 8], [ox + 22, 8], [ox + 22, 50], [ox + 15, 60], [ox + 5, 54]];
+  const heart = [[100, 56], [84, 38], [88, 22], [100, 28], [112, 22], [116, 38], [100, 56]];
+  const line = (pts) => `<path d="M${pts.map(([x, y]) => `${x} ${y}`).join('L')}" pathLength="1"/>`;
+  return `<svg class="constellation" viewBox="-6 -2 212 70" aria-hidden="true">
+    <g class="c-lines">${line(J(0).slice(0, 2))}${line(J(0).slice(2))}${line(heart)}${line(J(160).slice(0, 2))}${line(J(160).slice(2))}</g>
+    ${[J(0), heart, J(160)].flat().map(([x, y], i) => `<circle class="c-star" cx="${x}" cy="${y}" r="${i % 3 ? 1.6 : 2.2}" style="--d:${(i * 0.13).toFixed(2)}s"/>`).join('')}
+  </svg>`;
 }
 
 // ---------- 고양이를 누르면: 말풍선 + 하트 + 폴짝 ----------

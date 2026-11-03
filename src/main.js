@@ -2,7 +2,8 @@ import './style.css';
 import { config as c } from './config.js';
 import { groom, bride, cat } from './characters.js';
 import { makeInvitationImage } from './saveImage.js';
-import { getMode, initFrost, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes } from './effects.js';
+import { renderMusicBox } from './musicbox.js';
+import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes, constellation } from './effects.js';
 
 // ---------- 유틸 ----------
 const $ = (sel) => document.querySelector(sel);
@@ -50,6 +51,8 @@ const galleryFull = byName(
     eager: true, import: 'default', query: '?w=1600&format=webp&quality=80',
   })
 );
+// 배경음악: music 폴더에 mp3·m4a 파일을 넣으면 오른쪽 위에 레코드판 버튼이 생김 (이름순 첫 번째)
+const bgm = byName(import.meta.glob('/music/*.{mp3,m4a,aac,ogg,wav,MP3,M4A}', { eager: true, import: 'default', query: '?url' }))[0];
 const galleryThumb = byName(
   import.meta.glob('/photos/gallery/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', {
     eager: true, import: 'default', query: '?w=640&h=800&fit=cover&format=webp&quality=76',
@@ -113,7 +116,14 @@ $('#app').innerHTML = `
     mainPhoto
       ? // 대표 사진이 있으면: 화면 가득 사진 → 아래쪽이 눈 쌓인 듯 흰색으로 녹아듦 → 이름·날짜
         `<section class="hero hero-full">
-    <div class="cover"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high">${drift('drift-cover')}</div>
+    <div class="cover"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high">
+      <div class="bokeh" aria-hidden="true">${[[12, 16, 0], [26, 9, 3.5], [44, 22, 1.2], [58, 12, 6], [70, 18, 2.4], [84, 10, 4.6], [36, 14, 7.8], [92, 20, 5.4], [6, 11, 8.6]]
+        .map(([x, s, d]) => `<i style="left:${x}%;--s:${s}px;--d:${d}s;--t:${(10 + (x % 5)).toFixed(0)}s"></i>`).join('')}</div>
+      <div class="mag" aria-hidden="true">
+        <div class="mag-head"><b>${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</b><small>The Wedding Issue · Winter ${w.year}</small></div>
+        <div class="mag-side">Save the Date</div>
+        <div class="mag-date"><span>${pad(w.month)}</span><i></i><span>${pad(w.day)}</span></div>
+      </div>${drift('drift-cover')}</div>
     <div class="hero-in">
       <div class="save foil">${esc(heroEyebrow)}</div>
       <div class="names">
@@ -246,6 +256,7 @@ $('#app').innerHTML = `
   }
 
   <section class="foot rv">
+    ${constellation()}
     ${lights()}
     <div class="family" aria-hidden="true">
       <div class="couple">${groom()}<span class="fam-heart" aria-hidden="true">♥</span>${bride()}</div>
@@ -261,6 +272,7 @@ $('#app').innerHTML = `
       <button class="link-btn" type="button" id="saveImage">사진으로 저장</button>
     </div>
     ${envelope('env-close', '<em>Thank you</em><i>♥</i>')}
+    <button class="to-top" type="button" id="toTop" aria-label="맨 위로"><span aria-hidden="true">❄</span>맨 위로</button>
   </section>
 </main>
 <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="사진 크게 보기">
@@ -274,6 +286,7 @@ $('#app').innerHTML = `
   <div class="sm-box">
     <img id="saveImg" alt="청첩장 이미지 (이름, 날짜, 장소가 담긴 한 장)">
     <p class="sm-tip">이미지를 길게 눌러서 저장할 수도 있어요</p>
+    <a class="sm-out" id="saveOut" hidden>저장이 안 되면 다른 브라우저로 열기 ↗</a>
     <div class="sm-btns">
       <button class="btn" type="button" id="saveDl">저장하기</button>
       <button class="btn" type="button" id="saveShare" hidden>공유하기</button>
@@ -368,35 +381,29 @@ function tick() {
 tick();
 setInterval(tick, 1000);
 
-// ---------- 성에 낀 사진 · 고양이 반응 ----------
-initFrost($('.cover'), reduceMotion);
+// ---------- 고양이 반응 · 입김 · 제목 눈송이 · 고양이 눈동자 ----------
 initFog(reduceMotion);
 initTitleSnow(reduceMotion);
 initEyes(reduceMotion);
 initCatPoke();
 
-// ---------- 처음 열 때: 봉투의 실링이 떨어지고 덮개가 열리며 청첩장 카드가 나옴 (누르면 바로 넘어감) ----------
+// ---------- 처음 열 때: 시네마틱 오프닝 — 가운데 금선 → 이름·날짜가 차례로 올라옴 → 화면이 위아래로 갈라지며 사진 (누르면 바로 넘어감) ----------
 (() => {
   if (reduceMotion) return;
   const root = document.documentElement;
   root.classList.add('intro-on');  // 그동안 첫 화면 애니메이션은 멈춰 두었다가 끝나면 시작
   const el = document.createElement('div');
-  el.className = 'intro';
-  el.innerHTML = envelope(
-    'env-open',
-    `<small>${esc(heroEyebrow)}</small><b>${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</b><small>${w.year}. ${pad(w.month)}. ${pad(w.day)}</small>`,
-    '<span>소중한 분께</span>'
-  );
+  el.className = 'intro cine';
+  el.innerHTML = `<div class="cine-top"><div class="cine-txt"><small>${esc(heroEyebrow)}</small><b>${esc(c.groom.englishName)} <em>&amp;</em> ${esc(c.bride.englishName)}</b></div></div>
+    <div class="cine-bot"><div class="cine-txt"><span>${w.year}. ${pad(w.month)}. ${pad(w.day)}</span></div></div>
+    <i class="cine-line"></i>`;
   document.body.appendChild(el);
-  const done = () => {
-    if (!el.isConnected) return;
-    root.classList.remove('intro-on');
-    el.remove();
-  };
+  // 화면이 갈라지기 시작할 때 첫 화면 애니메이션을 시작해서 자연스럽게 이어짐
+  const open = () => root.classList.remove('intro-on');
+  const done = () => { open(); el.remove(); };
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('go')));
-  el.addEventListener('animationend', (e) => { if (e.target === el) done(); });
-  el.addEventListener('click', done);
-  setTimeout(done, 4500);
+  const t1 = setTimeout(open, 2750), t2 = setTimeout(done, 3900);
+  el.addEventListener('click', () => { clearTimeout(t1); clearTimeout(t2); done(); });
 })();
 
 // ---------- 스크롤 등장 효과 ----------
@@ -899,12 +906,29 @@ function countUpDday() {
   if (!galleryFull.length) return;
   const lb = $('#lb'), img = $('#lbImg'), n = galleryFull.length;
   let cur = 0, lastFocus = null;
-  const show = (i) => {
-    cur = (i + n) % n;
-    img.src = galleryFull[cur];
-    $('#lbCount').textContent = `${cur + 1} / ${n}`;
-    // 앞뒤 사진 미리 불러오기
-    [cur + 1, cur - 1].forEach((j) => { new Image().src = galleryFull[(j + n) % n]; });
+  // turn: 크게 보기에서 넘길 때는 종이책 페이지가 넘어가듯 접혔다 펴짐
+  const show = (i, turn) => {
+    const next = (i + n) % n, dir = i > cur ? 1 : -1;
+    const apply = () => {
+      cur = next;
+      img.src = galleryFull[cur];
+      $('#lbCount').textContent = `${cur + 1} / ${n}`;
+      // 앞뒤 사진 미리 불러오기
+      [cur + 1, cur - 1].forEach((j) => { new Image().src = galleryFull[(j + n) % n]; });
+    };
+    if (!turn || reduceMotion || !img.animate) return apply();
+    const out = dir > 0 ? 'left center' : 'right center', inn = dir > 0 ? 'right center' : 'left center';
+    img.getAnimations().forEach((a) => a.finish());
+    img.animate([
+      { transform: 'perspective(1600px) rotateY(0)', transformOrigin: out, filter: 'brightness(1)' },
+      { transform: `perspective(1600px) rotateY(${dir > 0 ? -88 : 88}deg) skewY(${dir > 0 ? 3 : -3}deg)`, transformOrigin: out, filter: 'brightness(.7)' },
+    ], { duration: 240, easing: 'cubic-bezier(.5,0,.8,.6)' }).finished.then(() => {
+      apply();
+      img.animate([
+        { transform: `perspective(1600px) rotateY(${dir > 0 ? 88 : -88}deg) skewY(${dir > 0 ? -3 : 3}deg)`, transformOrigin: inn, filter: 'brightness(.7)' },
+        { transform: 'none', transformOrigin: inn, filter: 'brightness(1)' },
+      ], { duration: 320, easing: 'cubic-bezier(.2,.6,.3,1)' });
+    });
   };
   const open = (i) => {
     lastFocus = document.activeElement;
@@ -1006,14 +1030,14 @@ function countUpDday() {
     else go(i);
   });
   $('#lbClose').addEventListener('click', close);
-  $('#lbPrev').addEventListener('click', () => show(cur - 1));
-  $('#lbNext').addEventListener('click', () => show(cur + 1));
+  $('#lbPrev').addEventListener('click', () => show(cur - 1, true));
+  $('#lbNext').addEventListener('click', () => show(cur + 1, true));
   lb.addEventListener('click', (e) => { if (e.target === lb) close(); });
   document.addEventListener('keydown', (e) => {
     if (lb.hidden) return;
     if (e.key === 'Escape') close();
-    else if (e.key === 'ArrowLeft') show(cur - 1);
-    else if (e.key === 'ArrowRight') show(cur + 1);
+    else if (e.key === 'ArrowLeft') show(cur - 1, true);
+    else if (e.key === 'ArrowRight') show(cur + 1, true);
   });
   // 좌우로 밀어서 넘기기
   let sx = null;
@@ -1022,7 +1046,7 @@ function countUpDday() {
     if (sx === null) return;
     const dx = e.changedTouches[0].clientX - sx;
     sx = null;
-    if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1), true);
   });
 })();
 
@@ -1061,16 +1085,25 @@ $('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 �
 // ---------- 청첩장 사진으로 저장: 중요한 정보를 한 장의 이미지로 만들어 보여 주고 저장/공유 ----------
 (() => {
   const modal = $('#saveModal'), img = $('#saveImg'), shareBtn = $('#saveShare');
-  const fileName = `청첩장_${c.groom.firstName}_${c.bride.firstName}.jpg`;
+  // 파일 이름은 영문으로 (한글 이름은 일부 휴대폰에서 '지원하지 않는 형식'으로 저장됨)
+  const fileName = `wedding-${c.groom.englishName}-${c.bride.englishName}.jpg`.toLowerCase();
   let blob = null, url = '', busy = false;
+  // 카카오톡 안 브라우저는 파일 저장이 막혀 있어서, 휴대폰 기본 브라우저로 여는 길을 함께 보여 줌
+  const inKakao = /KAKAOTALK/i.test(navigator.userAgent);
+  if (inKakao) {
+    const out = $('#saveOut');
+    out.hidden = false;
+    out.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(location.href)}`;
+  }
   $('#saveImage').addEventListener('click', async () => {
     if (busy) return;
     busy = true;
     toast('청첩장 이미지를 만드는 중이에요…');
     try {
       if (!blob) {
-        blob = await makeInvitationImage({ c, w, dowKo: DOW_KO[dow], timeKo, photo: mainPhoto, groom, bride, cat, siteUrl: c.siteUrl });
-        url = URL.createObjectURL(blob);
+        const made = await makeInvitationImage({ c, w, dowKo: DOW_KO[dow], timeKo, photo: mainPhoto, groom, bride, cat });
+        blob = made.blob;
+        url = made.dataUrl;
         img.src = url;
         const file = new File([blob], fileName, { type: 'image/jpeg' });
         shareBtn.hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
@@ -1093,7 +1126,7 @@ $('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 �
     document.body.appendChild(a);
     a.click();
     a.remove();
-    toast('사진을 저장했어요. 안 되면 이미지를 길게 눌러 주세요');
+    toast(inKakao ? '카카오톡에서는 이미지를 길게 눌러 저장해 주세요' : '사진을 저장했어요. 안 되면 이미지를 길게 눌러 주세요');
   });
   // 휴대폰 공유창의 '이미지 저장'으로 사진첩에 바로 넣을 수 있음
   shareBtn.addEventListener('click', async () => {
@@ -1141,3 +1174,52 @@ $('#share').addEventListener('click', async () => {
     copy(location.href, '청첩장 링크를 복사했어요');
   }
 });
+
+// ---------- 맨 위로: 두 사람과 고양이가 썰매를 타고 위로 슝 ----------
+$('#toTop').addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  if (reduceMotion) return;
+  const s = document.createElement('div');
+  s.className = 'sled';
+  s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = `<div class="sled-riders">${groom()}${bride()}${cat('calico', 'sled-cat')}</div>
+    <svg class="sled-base" viewBox="0 0 120 30"><path d="M8 8h96" stroke="#9C6B4E" stroke-width="5" stroke-linecap="round"/>
+      <path d="M14 10v10M40 10v10M72 10v10M98 10v10" stroke="#7A5240" stroke-width="3"/>
+      <path d="M4 22h96q14 0 16-12" stroke="#B9C7D3" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>`;
+  document.body.appendChild(s);
+  s.animate([
+    { transform: 'translate(-50%, 0) rotate(-8deg)' },
+    { transform: `translate(-50%, ${-(window.innerHeight + 220)}px) rotate(-14deg)` },
+  ], { duration: 1500, easing: 'cubic-bezier(.45,0,.25,1)' }).finished.then(() => s.remove());
+});
+
+// ---------- 배경음악: 처음엔 꺼져 있고, 레코드판을 누르면 재생 (다시 누르면 멈춤) ----------
+// music 폴더에 파일이 있으면 그 곡, 없으면 청첩장 전용 오르골 왈츠(musicbox.js)
+if (bgm || fx.music !== false) {
+  const b = document.createElement('button');
+  b.className = 'bgm';
+  b.type = 'button';
+  b.setAttribute('aria-label', '배경음악 켜기');
+  b.innerHTML = '<span class="vinyl" aria-hidden="true"></span><i class="bgm-note" aria-hidden="true">♪</i>';
+  document.body.appendChild(b);
+  const audio = new Audio();
+  audio.loop = true;
+  audio.volume = bgm ? 0.55 : 0.7;
+  // 오르골 곡은 누르는 순간 바로 재생되도록 미리 만들어 둠 (휴대폰은 누른 직후에만 소리를 틀 수 있음)
+  const ready = bgm ? Promise.resolve(bgm) : new Promise((ok) => setTimeout(ok, 1500)).then(renderMusicBox);
+  ready.then((src) => { if (src) audio.src = src; else b.remove(); });
+  b.addEventListener('click', async () => {
+    if (audio.paused) {
+      if (!audio.src) { toast('음악을 준비하고 있어요'); await ready; }
+      try { await audio.play(); } catch { return; }
+      b.classList.add('on');
+      b.setAttribute('aria-label', '배경음악 끄기');
+    } else {
+      audio.pause();
+      b.classList.remove('on');
+      b.setAttribute('aria-label', '배경음악 켜기');
+    }
+  });
+  // 다른 앱으로 나가면 잠시 멈춤
+  document.addEventListener('visibilitychange', () => { if (document.hidden && !audio.paused) { audio.pause(); b.classList.remove('on'); } });
+}
