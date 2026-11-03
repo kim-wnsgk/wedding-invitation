@@ -227,7 +227,7 @@ export function initFog(reduceMotion) {
     lx = x; ly = y;
   };
   const start = (x, y, target) => {
-    if (target.closest('button, a, input, details, .carousel, .cover, .lb, .cat, .snow-hit, iframe')) return;
+    if (target.closest('button, a, input, details, .carousel, .cover, .lb, .save-modal, .cat, .snow-hit, iframe')) return;
     sx = x; sy = y;
     clearTimeout(timer);
     timer = setTimeout(() => {

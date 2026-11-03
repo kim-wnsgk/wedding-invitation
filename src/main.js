@@ -1,6 +1,7 @@
 import './style.css';
 import { config as c } from './config.js';
 import { groom, bride, cat } from './characters.js';
+import { makeInvitationImage } from './saveImage.js';
 import { getMode, initFrost, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes } from './effects.js';
 
 // ---------- 유틸 ----------
@@ -180,13 +181,13 @@ $('#app').innerHTML = `
       ? `<section class="rv">
     <div class="eyebrow">Gallery</div>
     <h2>우리의 사진</h2>
-    <div class="carousel" id="gallery">
+    <div class="carousel" id="gallery"><div class="track">
       ${galleryThumb
         .map((src, i) => `<button type="button" class="slide" data-i="${i}" aria-label="사진 ${i + 1} 크게 보기">
           <span class="polaroid"><img style="--i:${Math.min(i, 3)}" src="${src}" alt="" loading="lazy" draggable="false"><small>${pad(i + 1)}</small></span>
         </button>`)
         .join('')}
-    </div>
+    </div></div>
     <div class="g-nav">
       ${cat('yellowSpot1', 'cat-gal')}
       <button type="button" id="gPrev" aria-label="이전 사진">&#8249;</button>
@@ -257,6 +258,7 @@ $('#app').innerHTML = `
     <div class="share-row">
       <button class="link-btn" type="button" id="share">공유하기</button>
       <button class="link-btn" type="button" id="copyLink">링크 복사</button>
+      <button class="link-btn" type="button" id="saveImage">사진으로 저장</button>
     </div>
     ${envelope('env-close', '<em>Thank you</em><i>♥</i>')}
   </section>
@@ -267,6 +269,17 @@ $('#app').innerHTML = `
   <button class="lb-btn lb-prev" type="button" id="lbPrev" aria-label="이전 사진">&#8249;</button>
   <button class="lb-btn lb-next" type="button" id="lbNext" aria-label="다음 사진">&#8250;</button>
   <div class="lb-count" id="lbCount"></div>
+</div>
+<div class="save-modal" id="saveModal" hidden role="dialog" aria-modal="true" aria-label="청첩장 사진으로 저장">
+  <div class="sm-box">
+    <img id="saveImg" alt="청첩장 이미지 (이름, 날짜, 장소가 담긴 한 장)">
+    <p class="sm-tip">이미지를 길게 눌러서 저장할 수도 있어요</p>
+    <div class="sm-btns">
+      <button class="btn" type="button" id="saveDl">저장하기</button>
+      <button class="btn" type="button" id="saveShare" hidden>공유하기</button>
+      <button class="btn" type="button" id="saveClose">닫기</button>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 `;
@@ -464,7 +477,7 @@ function countUpDday() {
   requestAnimationFrame(step);
 }
 
-// ---------- 맨 위 스크롤 막대: 신랑(왼쪽)과 신부(오른쪽)가 고양이와 함께 걸어와 맨 끝에서 만남 · 대표 사진 패럴랙스 ----------
+// ---------- 맨 위 스크롤 막대: 신랑(왼쪽)과 신부(오른쪽)가 고양이와 함께 걸어와 맨 끝에서 만남  ----------
 (() => {
   const bar = document.createElement('div');
   bar.className = 'walk';
@@ -476,7 +489,6 @@ function countUpDday() {
   document.body.appendChild(bar);
   const wg = bar.querySelector('.w-g'), wb = bar.querySelector('.w-b');
   const fl = bar.querySelector('.walk-fill-l'), fr = bar.querySelector('.walk-fill-r');
-  const photo = reduceMotion ? null : $('.cover img');
   let queued = false, stop;
   const update = () => {
     queued = false;
@@ -489,8 +501,6 @@ function countUpDday() {
     fl.style.transform = fr.style.transform = `scaleX(${p.toFixed(3)})`;
     bar.classList.toggle('met', p > 0.985);
     setSky(p, reduceMotion);
-    // 사진이 액자 안에서 스크롤보다 천천히 움직임
-    if (photo && y < window.innerHeight * 1.5) photo.style.translate = `0 ${-Math.min(y * 0.12, 52)}px`;
   };
   window.addEventListener('scroll', () => {
     if (!queued) { queued = true; requestAnimationFrame(update); }
@@ -909,35 +919,86 @@ function countUpDday() {
     lastFocus?.focus();
   };
   // 옆으로 넘기는 폴라로이드: 가운데 사진은 반듯하고 크게, 옆 사진은 기울고 작고 흐리게
-  const track = $('#gallery'), slides = [...track.querySelectorAll('.slide')];
-  let active = 0, queued = false;
+  // 위아래로 미는 건 브라우저가 그대로 페이지를 스크롤하고(touch-action: pan-y), 좌우로 미는 것만 직접 받아서 넘김
+  const box = $('#gallery'), track = box.firstElementChild, slides = [...track.querySelectorAll('.slide')];  // n: 위에서 센 사진 수
+  let active = 0, offset = 0, anim = 0, drag = null, moved = false;
+  const centerOf = (i) => slides[i].offsetLeft + slides[i].offsetWidth / 2;
+  const targetFor = (i) => box.clientWidth / 2 - centerOf(i);
+  const nearest = () => {
+    let best = 0, bd = Infinity;
+    slides.forEach((_, i) => { const d = Math.abs(centerOf(i) + offset - box.clientWidth / 2); if (d < bd) { bd = d; best = i; } });
+    return best;
+  };
   const layout = () => {
-    queued = false;
-    const mid = track.scrollLeft + track.clientWidth / 2;
-    let best = Infinity;
+    track.style.transform = `translateX(${offset.toFixed(1)}px)`;
+    const mid = box.clientWidth / 2;
     slides.forEach((s, i) => {
-      const d = (s.offsetLeft - track.offsetLeft + s.offsetWidth / 2 - mid) / s.offsetWidth;
+      const d = (centerOf(i) + offset - mid) / s.offsetWidth;
       const k = Math.min(Math.abs(d), 1);
       const card = s.firstElementChild;
       card.style.transform = `translateY(${k * 18}px) rotate(${Math.max(-1, Math.min(1, d)) * 7}deg) scale(${1 - k * 0.14})`;
       card.style.opacity = String(1 - k * 0.45);
       card.style.setProperty('--sh', `${(Math.max(-1, Math.min(1, d)) * 130).toFixed(1)}%`);
       card.style.setProperty('--sho', (1 - k).toFixed(2));
-      if (Math.abs(d) < best) { best = Math.abs(d); active = i; }
     });
-    $('#gCount').textContent = `${active + 1} / ${slides.length}`;
+    $('#gCount').textContent = `${nearest() + 1} / ${n}`;
   };
-  const go = (i) => {
-    const s = slides[(i + slides.length) % slides.length];
-    track.scrollTo({ left: s.offsetLeft - track.offsetLeft + s.offsetWidth / 2 - track.clientWidth / 2, behavior: reduceMotion ? 'auto' : 'smooth' });
+  // 목표 사진까지 부드럽게 이동 (이동하는 동안에도 기울기가 계속 바뀌도록 직접 그림)
+  const animateTo = (i) => {
+    active = Math.max(0, Math.min(n - 1, i));
+    const from = offset, to = targetFor(active), t0 = performance.now(), dur = reduceMotion ? 1 : 420;
+    cancelAnimationFrame(anim);
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      offset = from + (to - from) * (1 - Math.pow(1 - p, 3));
+      layout();
+      if (p < 1) anim = requestAnimationFrame(step);
+    };
+    anim = requestAnimationFrame(step);
   };
-  track.addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(layout); } }, { passive: true });
-  window.addEventListener('resize', layout);
+  const go = (i) => animateTo((i + n) % n);
+  box.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    cancelAnimationFrame(anim);
+    drag = { x: e.clientX, start: offset, t: performance.now() };
+    moved = false;
+  });
+  box.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (!moved && Math.abs(dx) > 6) {
+      moved = true;
+      try { box.setPointerCapture(e.pointerId); } catch { /* 이미 끝난 터치 */ }
+    }
+    if (!moved) return;
+    // 처음·마지막 사진 너머로는 고무줄처럼 살짝만 끌림
+    let o = drag.start + dx;
+    const max = targetFor(0), min = targetFor(n - 1);
+    if (o > max) o = max + (o - max) * 0.35;
+    if (o < min) o = min + (o - min) * 0.35;
+    offset = o;
+    layout();
+  });
+  const release = (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, v = dx / Math.max(performance.now() - drag.t, 1);
+    drag = null;
+    if (!moved) { animateTo(active); return; }
+    let i = nearest();
+    // 살짝 튕기듯 밀어도 다음 사진으로
+    if (i === active && Math.abs(v) > 0.35) i = active + (dx < 0 ? 1 : -1);
+    animateTo(i);
+    setTimeout(() => { moved = false; }, 80);
+  };
+  box.addEventListener('pointerup', release);
+  box.addEventListener('pointercancel', () => { drag = null; animateTo(active); });
+  window.addEventListener('resize', () => { offset = targetFor(active); layout(); });
   layout();
   $('#gPrev').addEventListener('click', () => go(active - 1));
   $('#gNext').addEventListener('click', () => go(active + 1));
-  // 가운데 사진을 누르면 크게 보기, 옆 사진을 누르면 그 사진으로 넘김
-  track.addEventListener('click', (e) => {
+  // 가운데 사진을 누르면 크게 보기, 옆 사진을 누르면 그 사진으로 넘김 (끌어서 넘긴 직후의 클릭은 무시)
+  box.addEventListener('click', (e) => {
+    if (moved) { moved = false; return; }
     const s = e.target.closest('.slide');
     if (!s) return;
     const i = Number(s.dataset.i);
@@ -996,6 +1057,49 @@ document.querySelectorAll('[data-copy]').forEach((b) =>
   b.addEventListener('click', () => { pawStamp(b); copy(b.dataset.copy, '계좌번호를 복사했어요'); })
 );
 $('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 링크를 복사했어요'));
+
+// ---------- 청첩장 사진으로 저장: 중요한 정보를 한 장의 이미지로 만들어 보여 주고 저장/공유 ----------
+(() => {
+  const modal = $('#saveModal'), img = $('#saveImg'), shareBtn = $('#saveShare');
+  const fileName = `청첩장_${c.groom.firstName}_${c.bride.firstName}.jpg`;
+  let blob = null, url = '', busy = false;
+  $('#saveImage').addEventListener('click', async () => {
+    if (busy) return;
+    busy = true;
+    toast('청첩장 이미지를 만드는 중이에요…');
+    try {
+      if (!blob) {
+        blob = await makeInvitationImage({ c, w, dowKo: DOW_KO[dow], timeKo, photo: mainPhoto, groom, bride, cat, siteUrl: c.siteUrl });
+        url = URL.createObjectURL(blob);
+        img.src = url;
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        shareBtn.hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
+      }
+      $('#toast').classList.remove('show');
+      modal.hidden = false;
+      document.body.style.overflow = 'hidden';
+    } catch (e) {
+      toast('이미지를 만들지 못했어요. 화면을 캡처해 주세요');
+    }
+    busy = false;
+  });
+  const close = () => { modal.hidden = true; document.body.style.overflow = ''; };
+  $('#saveClose').addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  $('#saveDl').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('사진을 저장했어요. 안 되면 이미지를 길게 눌러 주세요');
+  });
+  // 휴대폰 공유창의 '이미지 저장'으로 사진첩에 바로 넣을 수 있음
+  shareBtn.addEventListener('click', async () => {
+    try { await navigator.share({ files: [new File([blob], fileName, { type: 'image/jpeg' })], title: c.meta.title }); } catch { /* 취소 */ }
+  });
+})();
 // 공유하기: ① 카카오톡 공유(앱 키가 있을 때) → ② 휴대폰 공유창 → ③ 링크 복사
 // 카카오톡 안에서 열린 청첩장은 휴대폰 공유창을 지원하지 않아서 ①이 필요합니다.
 const kakaoKey = c.kakao?.jsKey;
