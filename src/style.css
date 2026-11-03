@@ -5,6 +5,7 @@
   --sky:#D9E3EB; --sky-soft:#EDF2F6;  /* 첫 화면·마지막 화면의 겨울 하늘빛 */
   --f-ko:"Noto Serif KR",serif;
   --f-en:"Playfair Display","Times New Roman",serif;
+  --f-name:"Cormorant Garamond","Playfair Display",serif;  /* 영문 이름 */
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -46,15 +47,15 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 .cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(to bottom,rgba(255,254,252,0),rgba(255,254,252,.6) 55%,var(--card))}
 .hero-full .hero-in{margin-top:0;padding:0 24px}
 /* 사진이 있을 때는 영문 이름을 한 줄로 */
-.hero.hero-full .names{font-size:34px;margin:14px 0 4px;white-space:nowrap}
+.hero.hero-full .names{font-size:40px;margin:14px 0 4px;white-space:nowrap}
 .hero.hero-full .names .nm{display:inline}
-.hero.hero-full .names .amp{display:inline-block;font-size:26px;margin:0 .28em}
+.hero.hero-full .names .amp{display:inline-block;font-size:32px;font-weight:500;margin:0 .22em}
 .hero.hero-full .ko{margin-top:10px}
 .hero.hero-full .date-en{margin-top:16px}
 .hero.hero-full .date-en::before,.hero.hero-full .date-en::after{margin:7px auto}
 .hero.hero-full .when{margin-top:2px}
 .hero-full{padding-bottom:58px}
-.hero .names{font-family:var(--f-en);font-weight:500;font-size:40px;line-height:1.15;margin:26px 0 8px;color:var(--ink);letter-spacing:.01em}
+.hero .names{font-family:var(--f-name);font-weight:600;font-size:46px;line-height:1.15;margin:26px 0 8px;color:var(--ink);letter-spacing:.01em}
 .hero .names .nm{display:block}
 .hero .names .amp{display:block;font-style:italic;font-size:24px;color:var(--rose);margin:4px 0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
@@ -256,8 +257,6 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 .count div{min-width:64px;padding:0 6px;font-variant-numeric:tabular-nums;overflow:hidden}
 .count div+div{border-left:1px solid var(--line)}
 .count b{display:block;font-size:26px;font-family:var(--f-en);font-style:italic;font-weight:500;line-height:1.2;color:var(--ink)}
-.count b.roll{animation:roll .5s cubic-bezier(.2,.8,.2,1)}
-@keyframes roll{from{opacity:0;transform:translateY(-60%)}to{opacity:1;transform:none}}
 .count small{font-size:10px;color:var(--muted);font-family:var(--f-en);font-weight:500;letter-spacing:.12em;text-transform:uppercase}
 
 /* location */
@@ -339,7 +338,7 @@ html.intro-on{overflow:hidden}
 .intro{position:fixed;inset:0;z-index:48;display:grid;place-items:center;cursor:pointer;
   background:var(--paper) radial-gradient(circle at 50% 40%,#FFFFFF,var(--paper) 70%)}
 .intro .env{--env-w:min(78vw,330px)}
-.env-open .env-card b{font-family:var(--f-en);font-weight:500;font-size:calc(var(--env-w) * .085);color:var(--ink);line-height:1.2}
+.env-open .env-card b{font-family:var(--f-name);font-weight:600;font-size:calc(var(--env-w) * .085);color:var(--ink);line-height:1.2}
 .env-open .env-card small{font-family:var(--f-en);font-size:calc(var(--env-w) * .036);letter-spacing:.22em;text-transform:uppercase;color:var(--rose)}
 .intro.go .env{animation:env-in .6s cubic-bezier(.2,.7,.2,1) both,env-zoom .7s cubic-bezier(.5,0,.3,1) 2.45s both}
 .intro.go .env-seal{animation:seal-off .5s ease .6s both}
@@ -364,3 +363,146 @@ html.intro-on{overflow:hidden}
 .env-close.in .env-flap{transform:rotateX(0);z-index:4;transition:transform .65s ease-in-out 1.05s,z-index 0s linear 1.3s}
 .env-close.in .env-seal{opacity:1;transform:translate(-50%,-50%) scale(1);transition:transform .45s cubic-bezier(.3,1.7,.5,1) 1.7s,opacity .15s ease 1.7s}
 @media (prefers-reduced-motion:reduce){.env-close>div{transition:none!important}}
+
+/* ---------- 금박 글자: 빛이 천천히 흘러감 ---------- */
+.foil{background:linear-gradient(105deg,#B8894F 0%,#E8D1A0 16%,#B98A52 34%,#D6B37A 50%,#F7E8C4 62%,#B8894F 80%,#CFA669 100%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent;animation:foil 7s linear infinite}
+@keyframes foil{from{background-position:0 0}to{background-position:-260% 0}}
+.play .hero-in .save.foil{animation:track-in 1.4s ease both,foil 7s linear infinite}
+.play .hero-in .date-en.foil{animation:rise .9s ease 1.6s both,foil 7s linear infinite}
+.play .names .amp.foil{animation:spin-in 1s cubic-bezier(.3,1.3,.5,1) 1.05s both,foil 7s linear infinite}
+
+/* ---------- 날짜별 화면: 당일 · 예식 후 문구 배지 ---------- */
+.mode-note{display:inline-block;margin-top:14px;padding:6px 16px;border:1px solid rgba(168,97,110,.5);border-radius:20px;font-size:13px;color:var(--rose);background:rgba(255,255,255,.6)}
+.play .hero-in .mode-note{animation-delay:2s}
+
+/* ---------- 성에 낀 사진 ---------- */
+.frost{position:absolute;inset:0;width:100%;height:100%;z-index:1;touch-action:pan-y;transition:opacity 4s ease}
+.frost.melt{opacity:0}
+
+/* ---------- 펜으로 쓰는 서명 ---------- */
+.foot .sign{font-family:"Great Vibes",var(--f-en);font-weight:400;font-size:36px;line-height:1.25;margin-bottom:4px}
+.a-sign{opacity:1;-webkit-mask-image:linear-gradient(90deg,#000 42%,transparent 58%);mask-image:linear-gradient(90deg,#000 42%,transparent 58%);-webkit-mask-size:250% 100%;mask-size:250% 100%;-webkit-mask-position:100% 0;mask-position:100% 0}
+.a-sign.in{-webkit-mask-position:0 0;mask-position:0 0;transition:-webkit-mask-position 4.2s cubic-bezier(.4,.1,.4,1) .3s,mask-position 4.2s cubic-bezier(.4,.1,.4,1) .3s}
+
+/* ---------- 현상되는 폴라로이드 ---------- */
+.polaroid img{filter:grayscale(1) sepia(.45) brightness(1.2) contrast(.78);transition:filter 3.2s ease calc(.35s + var(--i,0) * .35s)}
+.carousel.in .polaroid img{filter:none}
+
+/* ---------- 밤하늘의 별 (스크롤 끝쪽에서 은은하게) ---------- */
+.stars{position:fixed;inset:0;z-index:43;pointer-events:none;opacity:0}
+.stars i{position:absolute;width:3px;height:3px;border-radius:50%;background:#E9D9A8;box-shadow:0 0 6px 1px rgba(255,232,170,.75);transform:scale(var(--s));animation:star 2.8s ease-in-out var(--d) infinite}
+@keyframes star{50%{opacity:.25;transform:scale(calc(var(--s) * .6))}}
+
+/* ---------- 고양이를 누르면 ---------- */
+.cat{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.walk .cat{cursor:default}
+.cat.poke{animation:cat-hop .55s cubic-bezier(.3,1.6,.5,1)}
+.cat.poke .tail{animation-duration:.35s}
+@keyframes cat-hop{40%{translate:0 -7px;scale:1.08}}
+.meow{position:fixed;z-index:52;transform:translate(-50%,-100%);padding:4px 10px;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(46,43,56,.16);font-size:12px;color:var(--ink);white-space:nowrap;pointer-events:none;animation:meow 1.4s ease forwards}
+.meow::after{content:"";position:absolute;left:50%;bottom:-4px;width:8px;height:8px;margin-left:-4px;background:#fff;transform:rotate(45deg)}
+.meow i{font-style:normal;color:var(--rose);margin-left:4px}
+@keyframes meow{0%{opacity:0;transform:translate(-50%,-80%) scale(.6)}15%{opacity:1;transform:translate(-50%,-115%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-150%)}}
+
+/* ---------- 계좌 복사 발도장 ---------- */
+.paw{position:fixed;z-index:52;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;animation:paw 1.3s ease forwards}
+.paw svg{display:block;width:100%;height:100%;fill:var(--rose);opacity:.85}
+@keyframes paw{0%{opacity:0;transform:scale(1.9) rotate(-18deg)}18%{opacity:1;transform:scale(1) rotate(-18deg)}75%{opacity:1}100%{opacity:0;transform:translateY(-8px) rotate(-18deg)}}
+
+/* ---------- 맨 아래 전구 줄: 왼쪽부터 하나씩 켜짐 ---------- */
+.lights{display:block;width:calc(100% + 56px);height:auto;margin:-40px -28px 14px;overflow:visible}
+.lights .bulb{fill:#E8E2DB;stroke:#CFC5BC;stroke-width:.6;transition:fill .35s ease calc(var(--i) * .13s + .2s),stroke .35s ease calc(var(--i) * .13s + .2s)}
+.lights.in .bulb{fill:#FFD37E;stroke:#F2B850;filter:drop-shadow(0 0 4px rgba(255,190,80,.9));animation:bulb 3.2s ease-in-out calc(var(--i) * .13s + 1.8s) infinite}
+@keyframes bulb{50%{fill:#FFE8B0;filter:drop-shadow(0 0 8px rgba(255,205,110,1))}}
+
+@media (prefers-reduced-motion:reduce){
+  .foil,.lights *,.veh *,.stars i{animation:none!important}
+  .a-sign,.polaroid img,.lights *{transition:none!important}
+}
+
+/* ---------- 첫 화면 날짜·시간: 한눈에 보이게 ---------- */
+.hero-date{display:flex;flex-direction:column;align-items:center;margin-top:16px}
+.hero-date::before{content:"";width:28px;height:1px;background:var(--rose);opacity:.55;margin-bottom:12px}
+.hero-date b{font-family:var(--f-en);font-weight:500;font-size:30px;letter-spacing:.06em;line-height:1.15;color:var(--ink)}
+.hero-date span{margin-top:4px;font-size:17px;font-weight:700;letter-spacing:.04em;line-height:1.5;color:var(--ink)}
+.hero-date small{font-size:14px;line-height:1.5;color:var(--muted)}
+.play .hero-in .hero-date{animation-delay:1.55s}
+
+/* ---------- 첫 화면 예식장: 핀 + 진한 글씨 ---------- */
+.hero-date small{display:inline-flex;align-items:center;gap:5px;margin-top:2px;font-size:15px;font-weight:700;color:var(--ink)}
+.hero-date .pin{width:11px;height:14px;fill:var(--rose);flex:none}
+
+/* ---------- 오시는 길 탈것: 도로가 흘러가고 바퀴가 돌고 차체가 살짝 흔들림 ---------- */
+.veh{display:inline-block;width:40px;height:20px;margin-left:7px;vertical-align:-4px;overflow:visible}
+.veh .road{fill:none;stroke:#CFC6CB;stroke-width:1.2;stroke-dasharray:4 4;animation:road .55s linear infinite}
+.veh .body{animation:veh-bob .45s ease-in-out infinite alternate}
+.veh .wheel{transform-box:fill-box;transform-origin:center;animation:spin .6s linear infinite}
+.veh-park .road{animation:none}
+.veh-park .body{animation:park 3.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes road{to{stroke-dashoffset:-8}}
+@keyframes veh-bob{to{translate:0 -.8px}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes park{0%{translate:16px 0}45%,100%{translate:0 0}}
+
+/* ---------- 입김 서림 ---------- */
+.fog{position:fixed;inset:0;width:100%;height:100%;z-index:47;pointer-events:none;transition:opacity 2s ease}
+.fog.fade{opacity:0}
+.wrap{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.acct .num,.addr,.ways p{-webkit-user-select:text;user-select:text}
+
+/* ---------- 눈 위를 지나가는 고양이 ---------- */
+.snow-cat{position:fixed;left:0;top:0;width:30px;height:27px;z-index:46;pointer-events:none;opacity:0;transition:opacity .4s}
+.snow-cat.on{opacity:1}
+.snow-cat svg{width:100%;height:100%;animation:trot .24s ease-in-out infinite alternate}
+.snow-cat.flip svg{scale:-1 1}
+
+/* ---------- 눈사람: 누를 때마다 한 단계씩 ---------- */
+.snowman{position:fixed;left:0;top:0;width:44px;height:56px;z-index:46;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(80,110,145,.25))}
+.snowman svg{width:100%;height:100%;overflow:visible}
+.snowman g,.snowman .sm-ball{transform-box:fill-box;transform-origin:50% 100%;transition:transform .5s cubic-bezier(.3,1.6,.5,1),opacity .3s}
+.snowman .sm-ball{transform:scale(.45)}
+.snowman.s2 .sm-ball{transform:none}
+.snowman .sm-head,.snowman .sm-face,.snowman .sm-arms,.snowman .sm-wear{opacity:0;transform:scale(0)}
+.snowman.s3 .sm-head{opacity:1;transform:none}
+.snowman.s4 .sm-face,.snowman.s4 .sm-arms{opacity:1;transform:none}
+.snowman.s5 .sm-wear{opacity:1;transform:none}
+.snowman.s5{animation:hop .5s ease 2}
+/* 눈사람이 완성되면 두 사람이 손을 흔듦 */
+.waving .ch .arm-r{animation:wave-hand .45s ease-in-out 8 alternate!important}
+@keyframes wave-hand{from{transform:rotate(0)}to{transform:rotate(-75deg)}}
+
+/* ---------- 섹션 모서리 성에 ---------- */
+.frost-corner{position:absolute;width:88px;height:88px;pointer-events:none;opacity:.8;overflow:visible}
+.fc-tl{left:0;top:0}
+.fc-br{right:0;bottom:0;transform:rotate(180deg)}
+.frost-corner path{fill:none;stroke:#BACEDF;stroke-width:1;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}
+.frost-corner.in path{stroke-dashoffset:0;transition:stroke-dashoffset 2.6s ease var(--i)}
+
+/* ---------- 갤러리: 넘길 때 카드 위를 스치는 빛 ---------- */
+.polaroid::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(112deg,transparent 36%,rgba(255,255,255,.5) 50%,transparent 64%);transform:translateX(var(--sh,100%));opacity:var(--sho,0)}
+
+/* ---------- 섹션 제목에 내려앉는 눈송이 ---------- */
+section h2{position:relative}
+.title-flake{position:absolute;top:-3px;width:10px;height:10px;margin-left:-5px;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0-9V9M-7.8-4.5 7.8 4.5M-7.8 4.5 7.8-4.5M0-5.5l2.4-2M0-5.5l-2.4-2M0 5.5l2.4 2M0 5.5l-2.4 2' fill='none' stroke='%2393ADC6' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation:title-flake 4.2s ease forwards}
+@keyframes title-flake{0%{opacity:0;transform:translateY(-40px) rotate(-150deg)}25%{opacity:1;transform:none}65%{opacity:1;transform:none}100%{opacity:0;transform:translateY(2px) scale(.25)}}
+
+/* ---------- 카운트다운 숫자판 ---------- */
+.count b{display:inline-block;position:relative;min-width:1.55em;padding:3px 6px 1px;border-radius:6px;background:linear-gradient(180deg,#FFFFFF 0 50%,#F3EDEA 50% 100%);box-shadow:0 1px 3px rgba(46,43,56,.13)}
+.count b::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(46,43,56,.09)}
+.count small{display:block;margin-top:4px}
+.count b.flip{animation:flip .5s cubic-bezier(.3,.7,.3,1)}
+@keyframes flip{0%{transform:perspective(220px) rotateX(0)}45%{transform:perspective(220px) rotateX(-90deg)}100%{transform:perspective(220px) rotateX(0)}}
+
+/* ---------- 끝까지 읽으면 공유하기가 한 번 반짝 ---------- */
+#share{position:relative;overflow:hidden;border-radius:4px}
+#share.shine::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,214,140,.7) 50%,transparent 70%);transform:translateX(-120%);animation:share-shine 1.4s ease 2.4s forwards}
+#share.shine{animation:share-glow 1.6s ease 2.4s}
+@keyframes share-shine{to{transform:translateX(120%)}}
+@keyframes share-glow{50%{color:var(--rose);text-decoration-color:var(--rose)}}
+
+@media (prefers-reduced-motion:reduce){
+  .frost-corner path,.snowman *{transition:none!important}
+  .count b.flip,#share.shine,#share.shine::after{animation:none!important}
+}

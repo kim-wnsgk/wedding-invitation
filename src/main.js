@@ -1,6 +1,7 @@
 import './style.css';
 import { config as c } from './config.js';
 import { groom, bride, cat } from './characters.js';
+import { getMode, initFrost, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes } from './effects.js';
 
 // ---------- 유틸 ----------
 const $ = (sel) => document.querySelector(sel);
@@ -22,9 +23,15 @@ const ampm = w.hour < 12 ? '오전' : '오후';
 const hour12 = w.hour % 12 === 0 ? 12 : w.hour % 12;
 const timeKo = `${ampm} ${hour12}시${w.minute ? ` ${w.minute}분` : ''}`;
 const dateKo = `${w.year}년 ${w.month}월 ${w.day}일 ${DOW_KO[dow]}요일 ${timeKo}`;
-const dateEn = `${w.year}. ${pad(w.month)}. ${pad(w.day)} ${DOW_EN[dow]} ${hour12}:${pad(w.minute)} ${w.hour < 12 ? 'AM' : 'PM'}`;
 const couple = `${c.groom.firstName} ♥ ${c.bride.firstName}`;
 const fx = c.effects || {};
+// 예식 전 / 당일 / 다음 날부터 — 화면 문구와 연출이 바뀜 (주소 끝에 ?preview=dday 또는 ?preview=after 로 미리보기)
+const mode = getMode(w);
+document.documentElement.classList.add(`mode-${mode}`);
+const heroEyebrow = mode === 'dday' ? 'Today' : mode === 'after' ? 'Thank you' : fx.eyebrow || 'The Wedding of';
+const modeNote = mode === 'dday'
+  ? '<div class="mode-note">오늘, 두 사람이 결혼합니다</div>'
+  : mode === 'after' ? '<div class="mode-note">함께해 주셔서 진심으로 감사합니다</div>' : '';
 
 // ---------- 사진 (photos/main, photos/gallery 폴더에 넣은 파일을 자동으로 불러옴) ----------
 // 빌드할 때 휴대폰에 맞는 크기로 줄이고 webp로 변환합니다.
@@ -107,33 +114,41 @@ $('#app').innerHTML = `
         `<section class="hero hero-full">
     <div class="cover"><img src="${mainPhoto}" alt="${esc(couple)}" fetchpriority="high">${drift('drift-cover')}</div>
     <div class="hero-in">
-      <div class="save">${esc(fx.eyebrow || 'The Wedding of')}</div>
+      <div class="save foil">${esc(heroEyebrow)}</div>
       <div class="names">
         <span class="sr">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</span>
         <span class="nm" aria-hidden="true">${letters(c.groom.englishName, 0)}</span>
-        <span class="amp" aria-hidden="true">&amp;</span>
+        <span class="amp foil" aria-hidden="true">&amp;</span>
         <span class="nm" aria-hidden="true">${letters(c.bride.englishName, c.groom.englishName.length + 2)}</span>
       </div>
       <div class="ko">${esc(c.groom.name)} <i>·</i> ${esc(c.bride.name)}</div>
-      <div class="date-en">${dateEn}</div>
-      <div class="when">${dateKo}<br>${esc(c.venue.name)}</div>
+      <div class="hero-date">
+        <b>${w.year}. ${pad(w.month)}. ${pad(w.day)}</b>
+        <span>${DOW_KO[dow]}요일 ${timeKo}</span>
+        <small><svg class="pin" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 15.5S1 9.6 1 6a5 5 0 0 1 10 0c0 3.6-5 9.5-5 9.5Z"/><circle cx="6" cy="6" r="1.9" fill="#fff"/></svg>${esc(c.venue.name)}</small>
+      </div>
+      ${modeNote}
     </div>
     <div class="scroll-cue" aria-hidden="true"><span></span></div>
   </section>`
       : // 사진이 없으면: 모노그램 + 영문 이름
         `<section class="hero">
     <div class="hero-in">
-      <div class="save">${esc(fx.eyebrow || 'The Wedding of')}</div>
+      <div class="save foil">${esc(heroEyebrow)}</div>
       ${seal('seal-hero')}
       <div class="names">
         <span class="sr">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</span>
         <span class="nm" aria-hidden="true">${letters(c.groom.englishName, 0)}</span>
-        <span class="amp" aria-hidden="true">&amp;</span>
+        <span class="amp foil" aria-hidden="true">&amp;</span>
         <span class="nm" aria-hidden="true">${letters(c.bride.englishName, c.groom.englishName.length + 2)}</span>
       </div>
       <div class="ko">${esc(c.groom.name)} <i>·</i> ${esc(c.bride.name)}</div>
-      <div class="date-en">${dateEn}</div>
-      <div class="when">${dateKo}<br>${esc(c.venue.name)}</div>
+      <div class="hero-date">
+        <b>${w.year}. ${pad(w.month)}. ${pad(w.day)}</b>
+        <span>${DOW_KO[dow]}요일 ${timeKo}</span>
+        <small><svg class="pin" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 15.5S1 9.6 1 6a5 5 0 0 1 10 0c0 3.6-5 9.5-5 9.5Z"/><circle cx="6" cy="6" r="1.9" fill="#fff"/></svg>${esc(c.venue.name)}</small>
+      </div>
+      ${modeNote}
     </div>
     <div class="scroll-cue" aria-hidden="true"><span></span></div>
   </section>`
@@ -168,7 +183,7 @@ $('#app').innerHTML = `
     <div class="carousel" id="gallery">
       ${galleryThumb
         .map((src, i) => `<button type="button" class="slide" data-i="${i}" aria-label="사진 ${i + 1} 크게 보기">
-          <span class="polaroid"><img src="${src}" alt="" loading="lazy" draggable="false"><small>${pad(i + 1)}</small></span>
+          <span class="polaroid"><img style="--i:${Math.min(i, 3)}" src="${src}" alt="" loading="lazy" draggable="false"><small>${pad(i + 1)}</small></span>
         </button>`)
         .join('')}
     </div>
@@ -192,6 +207,7 @@ $('#app').innerHTML = `
   </section>
 
   <section class="rv">
+    ${frostCorner('fc-tl')}${frostCorner('fc-br')}
     <div class="eyebrow">Location</div>
     <h2>오시는 길</h2>
     <div class="venue">${esc(c.venue.name)}</div>
@@ -210,13 +226,14 @@ $('#app').innerHTML = `
       <a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.venue.address)}">구글 지도</a>
     </div>
     <div class="ways">
-      ${c.directions.map((d) => `<div><h3>${esc(d.title)}</h3><p>${esc(d.text)}</p></div>`).join('')}
+      ${c.directions.map((d) => `<div><h3>${esc(d.title)}${vehicle(d.title)}</h3><p>${esc(d.text)}</p></div>`).join('')}
     </div>
   </section>
 
   ${
     c.accounts.show
       ? `<section class="rv">
+    ${frostCorner('fc-tl')}${frostCorner('fc-br')}
     ${cat('cow', 'cat-acct')}
     <div class="eyebrow">With Heart</div>
     <h2>마음 전하실 곳</h2>
@@ -228,6 +245,7 @@ $('#app').innerHTML = `
   }
 
   <section class="foot rv">
+    ${lights()}
     <div class="family" aria-hidden="true">
       <div class="couple">${groom()}<span class="fam-heart" aria-hidden="true">♥</span>${bride()}</div>
       <div class="cats-row">
@@ -301,36 +319,48 @@ $('#app').innerHTML = `
 })();
 
 // ---------- D-day ----------
-$('#dday').innerHTML = `${esc(couple)}의 결혼식이 <strong id="ddayNum"></strong> 남았습니다`;
+$('#dday').innerHTML = mode === 'dday'
+  ? `오늘 <strong>${timeKo}</strong>, ${esc(couple)} 결혼합니다`
+  : `${esc(couple)}의 결혼식이 <strong id="ddayNum"></strong> 남았습니다`;
 $('#count').innerHTML = ['Days', 'Hours', 'Mins', 'Secs'].map((l) => `<div><b></b><small>${l}</small></div>`).join('');
 const countCells = [...document.querySelectorAll('#count b')];
 let daysLeft = 0, ddayCounting = false, ticked = false;
 function tick() {
   const diff = WED - new Date();
-  if (diff <= 0) {
-    $('#dday').innerHTML = `${esc(couple)}의 결혼식이 <strong>진행되었습니다</strong>`;
+  // 예식 다음 날부터(또는 시작 시각이 지나면): 결혼했다는 인사로
+  if (mode === 'after' || diff <= 0) {
+    $('#dday').innerHTML = `${esc(couple)}, ${w.month}월 ${w.day}일에 <strong>결혼했습니다</strong>`;
     $('#count').innerHTML = '';
     return;
   }
+  // 당일 미리보기(?preview=dday)에서는 남은 날짜 대신 문구만
+  if (mode === 'dday' && diff > 86400000) { $('#count').innerHTML = ''; return; }
   const s = Math.floor(diff / 1000);
   const D = Math.floor(s / 86400), H = Math.floor((s % 86400) / 3600), M = Math.floor((s % 3600) / 60), S = s % 60;
   daysLeft = D + 1;
-  if (!ddayCounting) $('#ddayNum').textContent = `${daysLeft}일`;
-  // 바뀐 숫자만 위에서 굴러 내려오듯 교체
+  if (!ddayCounting && $('#ddayNum')) $('#ddayNum').textContent = `${daysLeft}일`;
+  // 바뀐 숫자만 공항 안내판처럼 착 넘어감
   [D, pad(H), pad(M), pad(S)].forEach((v, i) => {
     const b = countCells[i];
     if (b.textContent === String(v)) return;
     b.textContent = v;
     if (ticked && !reduceMotion) {
-      b.classList.remove('roll');
+      b.classList.remove('flip');
       void b.offsetWidth;
-      b.classList.add('roll');
+      b.classList.add('flip');
     }
   });
   ticked = true;
 }
 tick();
 setInterval(tick, 1000);
+
+// ---------- 성에 낀 사진 · 고양이 반응 ----------
+initFrost($('.cover'), reduceMotion);
+initFog(reduceMotion);
+initTitleSnow(reduceMotion);
+initEyes(reduceMotion);
+initCatPoke();
 
 // ---------- 처음 열 때: 봉투의 실링이 떨어지고 덮개가 열리며 청첩장 카드가 나옴 (누르면 바로 넘어감) ----------
 (() => {
@@ -341,7 +371,7 @@ setInterval(tick, 1000);
   el.className = 'intro';
   el.innerHTML = envelope(
     'env-open',
-    `<small>${esc(fx.eyebrow || 'The Wedding of')}</small><b>${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</b><small>${w.year}. ${pad(w.month)}. ${pad(w.day)}</small>`,
+    `<small>${esc(heroEyebrow)}</small><b>${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</b><small>${w.year}. ${pad(w.month)}. ${pad(w.day)}</small>`,
     '<span>소중한 분께</span>'
   );
   document.body.appendChild(el);
@@ -358,7 +388,7 @@ setInterval(tick, 1000);
 
 // ---------- 스크롤 등장 효과 ----------
 // [선택자, 등장 방식, 순서별 지연(ms)] — 방식: up 아래에서 / left·right 옆에서 / zoom 커지며 / blur 흐림→선명
-//   / track 자간이 좁혀지며 / frost 성에 낀 듯 뿌옇다가 녹으며 선명 / lines 한 줄씩 차례로
+//   / track 자간이 좁혀지며 / frost 성에 낀 듯 뿌옇다가 녹으며 선명 / lines 한 줄씩 차례로 / sign 펜으로 쓰듯 왼쪽부터
 const REVEAL = [
   ['section:not(.hero) > .eyebrow', 'track'],
   ['section:not(.hero) > h2', 'blur', () => 60],
@@ -366,7 +396,8 @@ const REVEAL = [
   ['.parents > div:first-child', 'left'],
   ['.parents > div:last-child', 'right', () => 80],
   ['.carousel', 'frost', () => 60],
-  ['.family, .g-nav, .since, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .foot .sign, .share-row', 'up'],
+  ['.family, .g-nav, .since, .cal-head, .dday, .count, .venue, .addr, .copy-addr, .note, .share-row', 'up'],
+  ['.foot .sign', 'sign'],
   ['.btn-row .btn', 'up', (i) => i * 50],
   ['.map', 'zoom'],
   ['.ways > div', 'left', (i) => i * 60],
@@ -379,7 +410,7 @@ const REVEAL = [
       if (delay) el.style.setProperty('--d', `${delay(i)}ms`);
     })
   );
-  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, section:not(.hero)');
+  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, .lights, .frost-corner, section:not(.hero)');
   if (reduceMotion || !('IntersectionObserver' in window)) {
     els.forEach((el) => el.classList.add('in'));
     return;
@@ -388,7 +419,13 @@ const REVEAL = [
     if (el.classList.contains('in')) return;
     el.classList.add('in');
     if (el.id === 'dday') countUpDday();
-    if (el.classList.contains('foot')) window.dispatchEvent(new Event('flurry'));
+    if (el.classList.contains('foot')) {
+      window.dispatchEvent(new Event('flurry'));
+      const sh = $('#share');
+      sh?.classList.remove('shine');
+      void sh?.offsetWidth;
+      sh?.classList.add('shine');
+    }
   };
   // 화면 아래쪽 5% 위로 올라오면 바로 등장
   const showIO = new IntersectionObserver(
@@ -451,6 +488,7 @@ function countUpDday() {
     wb.style.transform = `translateX(${(-p * reach).toFixed(1)}px)`;
     fl.style.transform = fr.style.transform = `scaleX(${p.toFixed(3)})`;
     bar.classList.toggle('met', p > 0.985);
+    setSky(p, reduceMotion);
     // 사진이 액자 안에서 스크롤보다 천천히 움직임
     if (photo && y < window.innerHeight * 1.5) photo.style.translate = `0 ${-Math.min(y * 0.12, 52)}px`;
   };
@@ -485,10 +523,9 @@ function countUpDday() {
   const ctx = cv.getContext('2d');
   let W = 0, H = 0, flakes = [], bursts = [], last = 0, time = 0;
 
-  // 쌓인 눈: 아래는 STEP px 간격마다 높이, 양옆은 SSTEP px 간격마다 두께(화면 아래에서부터 잰 위치 기준)
+  // 쌓인 눈: STEP px 간격마다 높이
   const STEP = 3, BASE = 15, MAX = 42;
-  const SSTEP = 4, SMAX = 28;
-  let pile = [], sideL = [], sideR = [], sparkles = [], pileFill = null, fillL = null, fillR = null;
+  let pile = [], sparkles = [], pileFill = null;
   // 눈 결: 흰 알갱이와 옅은 하늘색 알갱이를 뿌린 작은 무늬를 반복해서 덮음
   const GRAIN = (() => {
     const c = document.createElement('canvas');
@@ -503,8 +540,6 @@ function countUpDday() {
     }
     return ctx.createPattern(c, 'repeat');
   })();
-  // 양옆: 아래 모서리는 두껍고 위로 갈수록 얇아지는 모양 (창틀 구석에 쌓인 눈처럼)
-  const sideCap = (i) => 4 + (SMAX - 4) * Math.exp((-i * SSTEP) / 150);
   function initPile() {
     const n = Math.ceil(W / STEP) + 2, seed = Math.random() * 10;
     pile = Array.from({ length: n }, (_, i) => {
@@ -512,14 +547,9 @@ function countUpDday() {
       // 완만한 큰 언덕 + 잔잔한 굴곡
       return BASE + Math.sin(x * 0.011 + seed) * 5 + Math.sin(x * 0.037 + seed * 2) * 2;
     });
-    const m = Math.ceil((Math.max(window.screen.height || 0, H) * 1.3) / SSTEP);
-    const side = (s) => Array.from({ length: m }, (_, i) => (2 + 13 * Math.exp((-i * SSTEP) / 110)) * (0.85 + 0.15 * Math.sin(i * 0.21 + s)));
-    sideL = side(seed);
-    sideR = side(seed + 3);
     sparkles = Array.from({ length: Math.round(W / 30) }, () => ({ i: Math.floor(Math.random() * n), d: 4 + Math.random() * 12, ph: Math.random() * 7 }));
   }
   const surface = (x) => pile[Math.max(0, Math.min(pile.length - 1, Math.round(x / STEP)))] || 0;
-  const sideAt = (arr, y) => arr[Math.max(0, Math.min(arr.length - 1, Math.round((H - y) / SSTEP)))] || 0;
   // 눈송이가 내려앉은 자리에 둥글게 눈을 보탬 (높을수록 덜 쌓여서 MAX 근처에서 멈춤)
   function deposit(x, amt, rad) {
     const c0 = Math.round(x / STEP), rc = Math.max(2, Math.round(rad / STEP));
@@ -529,14 +559,7 @@ function countUpDday() {
       pile[i] += amt * Math.exp((-k * k) / (rc * rc * 0.45)) * Math.max(0, 1 - pile[i] / MAX);
     }
   }
-  function depositSide(arr, y, amt) {
-    const c0 = Math.round((H - y) / SSTEP);
-    for (let k = -4; k <= 4; k++) {
-      const i = c0 + k;
-      if (i < 0 || i >= arr.length) continue;
-      arr[i] += amt * Math.exp((-k * k) / 6) * Math.max(0, 1 - arr[i] / sideCap(i));
-    }
-  }
+
   const smooth = (arr, k) => { for (let i = 1; i < arr.length - 1; i++) arr[i] += ((arr[i - 1] + arr[i + 1]) / 2 - arr[i]) * k; };
   // 부드러운 곡선으로 이은 눈 더미를 칠함: 옅은 그늘 → 바탕색 → 눈 결 → 윗면 아래 옅은 음영
   function paintDrift(trace, fill, shadeDX, shadeDY) {
@@ -571,25 +594,79 @@ function countUpDday() {
       ctx.quadraticCurveTo(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
     }
   }
+  // ---- 가끔 고양이 한 마리가 쌓인 눈 위를 지나가며 발자국을 남김 (새 눈에 서서히 덮임) ----
+  const walker = document.createElement('div');
+  walker.className = 'snow-cat';
+  walker.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(walker);
+  const KINDS = ['yellowSpot1', 'yellowSpot2', 'calico', 'cow', 'black', 'whiteLong', 'tortie', 'cheeseTabby'];
+  let wc = null, prints = [];
+  const nextWalk = (ms) => setTimeout(() => {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    walker.innerHTML = cat(KINDS[Math.floor(Math.random() * KINDS.length)]);
+    walker.classList.toggle('flip', dir < 0);
+    walker.classList.add('on');
+    wc = { x: dir > 0 ? -30 : W + 30, dir, v: 30 + Math.random() * 12, last: -99, step: 0 };
+  }, ms);
+  nextWalk(5000 + Math.random() * 5000);
+  function walkCat(dt) {
+    if (wc) {
+      wc.x += wc.dir * wc.v * dt;
+      const y = H - surface(wc.x);
+      walker.style.transform = `translate(${(wc.x - 15).toFixed(1)}px, ${(y - 25).toFixed(1)}px)`;
+      if (Math.abs(wc.x - wc.last) > 8) {
+        prints.push({ x: wc.x, off: wc.step++ % 2 ? -2.4 : 2.4, life: 9 });
+        wc.last = wc.x;
+      }
+      if (wc.x < -40 || wc.x > W + 40) { wc = null; walker.classList.remove('on'); nextWalk(16000 + Math.random() * 14000); }
+    }
+    for (let i = prints.length - 1; i >= 0; i--) {
+      const p = prints[i];
+      p.life -= dt;
+      if (p.life <= 0) { prints.splice(i, 1); continue; }
+      const a = Math.min(1, p.life / 4) * 0.45, x = p.x, y = H - surface(x) + 4 + p.off;
+      ctx.fillStyle = `rgba(120,150,180,${a})`;
+      ctx.beginPath(); ctx.ellipse(x, y, 1.9, 1.4, 0, 0, Math.PI * 2); ctx.fill();
+      for (const [dx, dy] of [[-1.6, -1.9], [0, -2.5], [1.6, -1.9]]) {
+        ctx.beginPath(); ctx.arc(x + dx, y + dy, 0.6, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // ---- 쌓인 눈을 다섯 번 누르면 눈사람 완성 → 두 사람이 손을 흔듦 ----
+  let man = null, manX = 0, taps = 0;
+  function buildSnowman(x) {
+    if (taps >= 5) return;
+    taps++;
+    if (!man) {
+      man = document.createElement('div');
+      man.className = 'snowman';
+      man.setAttribute('aria-hidden', 'true');
+      man.innerHTML = `<svg viewBox="0 0 44 56">
+        <g class="sm-arms"><path d="M10 34 2 28M4 30 3 26M34 34l8-6M40 30l1-4" stroke="#7A5A48" stroke-width="1.4" stroke-linecap="round" fill="none"/></g>
+        <circle class="sm-ball" cx="22" cy="42" r="12.5" fill="#FFFFFF" stroke="#C9D6E2" stroke-width="1"/>
+        <g class="sm-head"><circle cx="22" cy="22.5" r="8.8" fill="#FFFFFF" stroke="#C9D6E2" stroke-width="1"/></g>
+        <g class="sm-face"><circle cx="19" cy="21" r="1.1" fill="#2A2224"/><circle cx="25" cy="21" r="1.1" fill="#2A2224"/>
+          <path d="M22 23.2l5 1.4-5 .8z" fill="#F0913E"/><circle cx="22" cy="38" r="1" fill="#2A2224"/><circle cx="22" cy="43" r="1" fill="#2A2224"/></g>
+        <g class="sm-wear"><path d="M14 29.5q8 3.6 16 0l.6 2.6q-8.6 3.8-17.2 0z" fill="#A8616E"/><path d="M26 31l2.6 7-3 .4-1.6-6.6z" fill="#A8616E"/>
+          <rect x="15.5" y="12.4" width="13" height="2.4" rx="1" fill="#2E2B38"/><rect x="17.5" y="4.4" width="9" height="8.6" rx="1.2" fill="#2E2B38"/><rect x="17.5" y="10" width="9" height="1.6" fill="#A8616E"/></g>
+      </svg>`;
+      document.body.appendChild(man);
+      manX = Math.max(30, Math.min(W - 30, x));
+    }
+    man.classList.add(`s${taps}`);
+    if (taps === 5) {
+      document.documentElement.classList.add('waving');
+      setTimeout(() => document.documentElement.classList.remove('waving'), 4200);
+      toast('눈사람 완성! ⛄');
+    }
+  }
+
   function drawPile() {
     const ph = Math.round(Math.max(...pile) + 6);
     if (Math.abs(ph - hitH) > 2) { hitH = ph; hit.style.height = `${ph}px`; }
     // 뾰족해지지 않게 조금씩 고르게 → 바람에 다듬어진 듯 완만한 눈 더미
     smooth(pile, 0.05);
-    smooth(sideL, 0.06);
-    smooth(sideR, 0.06);
-    const rows = Math.ceil(H / SSTEP) + 2;
-    // 왼쪽 · 오른쪽 가장자리
-    paintDrift(() => {
-      ctx.moveTo(-2, H + 2);
-      curve(Array.from({ length: rows }, (_, i) => [sideL[i] || 0, H - i * SSTEP]));
-      ctx.lineTo(-2, -10);
-    }, fillL, -1, 0);
-    paintDrift(() => {
-      ctx.moveTo(W + 2, H + 2);
-      curve(Array.from({ length: rows }, (_, i) => [W - (sideR[i] || 0), H - i * SSTEP]));
-      ctx.lineTo(W + 2, -10);
-    }, fillR, 1, 0);
     // 아래
     paintDrift(() => {
       ctx.moveTo(-2, H + 2);
@@ -616,11 +693,13 @@ function countUpDday() {
   const make = (top) => {
     const z = 0.4 + Math.random();
     const crystal = Math.random() < 0.12;
+    const petal = mode === 'dday' && !crystal && Math.random() < 0.4;
     return {
       x: Math.random() * (W + 80) - 40,
       y: top ? -12 : Math.random() * H,
       z,
       crystal,
+      petal,
       r: crystal ? (4 + Math.random() * 4) * z : (0.7 + Math.random() * 1.8) * z,
       v: (crystal ? 18 : 26) * z + Math.random() * 14,
       sway: 8 + Math.random() * 18,
@@ -643,13 +722,6 @@ function countUpDday() {
     pileFill.addColorStop(0, '#FFFFFF');
     pileFill.addColorStop(0.35, '#F7FAFC');
     pileFill.addColorStop(1, '#DCE6EF');
-    fillL = ctx.createLinearGradient(SMAX, 0, 0, 0);
-    fillR = ctx.createLinearGradient(W - SMAX, 0, W, 0);
-    for (const f of [fillL, fillR]) {
-      f.addColorStop(0, '#FFFFFF');
-      f.addColorStop(0.4, '#F6F9FC');
-      f.addColorStop(1, '#DCE6EF');
-    }
     if (widthChanged) {
       initPile();
       const n = Math.max(50, Math.min(130, Math.round((W * H) / 6500)));
@@ -665,6 +737,21 @@ function countUpDday() {
     ctx.lineWidth = 0.7;
     ctx.strokeStyle = `rgba(110,140,168,${a * 0.38})`;
     ctx.stroke();
+  }
+  // 당일에 함께 흩날리는 분홍 꽃잎
+  function petal(x, y, r, rot, a) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot * 2);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r, r * 0.55, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(244,172,192,${a})`;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.2, 0, r * 0.45, r * 0.22, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,226,234,${a * 0.8})`;
+    ctx.fill();
+    ctx.restore();
   }
   function crystal(x, y, r, rot, a) {
     ctx.save();
@@ -692,7 +779,6 @@ function countUpDday() {
     time += dt;
     // 잔잔한 바람 + 가끔 부는 돌풍
     const gust = Math.max(0, Math.sin(time * 0.23) - 0.55) * 90;
-    // 바람이 가끔 왼쪽으로도 불어서 왼쪽 가장자리에도 눈이 쌓임
     const wind = 6 + Math.sin(time * 0.37) * 16 + gust;
     ctx.clearRect(0, 0, W, H);
     for (const f of flakes) {
@@ -702,17 +788,6 @@ function countUpDday() {
       f.rot += f.spin * dt;
       const x = f.x + Math.sin(f.ph) * f.sway;
       if (f.x > W + 50 || f.x < -60) { respawn(f); continue; }
-      // 바람에 밀려 화면 양옆 가장자리에 닿으면 옆에 쌓임
-      if (f.y > 0 && x < W + 2 && x >= W - sideAt(sideR, f.y) && wind > 0) {
-        depositSide(sideR, f.y, (f.crystal ? 1.2 : 0.6) * f.z);
-        respawn(f);
-        continue;
-      }
-      if (f.y > 0 && x > -2 && x <= sideAt(sideL, f.y) && wind < 0) {
-        depositSide(sideL, f.y, (f.crystal ? 1.2 : 0.6) * f.z);
-        respawn(f);
-        continue;
-      }
       // 쌓인 눈 위에 닿으면 그 자리에 쌓이고 새 눈송이로
       if (f.y >= H - surface(x)) {
         if (x > -4 && x < W + 4) deposit(x, (f.crystal ? 1.4 : 0.7) * f.z, f.r * 3 + 4);
@@ -720,7 +795,8 @@ function countUpDday() {
         continue;
       }
       const a = Math.min(0.95, 0.35 + f.z * 0.45);
-      if (f.crystal) crystal(x, f.y, f.r, f.rot, a);
+      if (f.petal) petal(x, f.y, f.r + 2.4, f.rot, a);
+      else if (f.crystal) crystal(x, f.y, f.r, f.rot, a);
       else dot(x, f.y, f.r, a);
     }
     // 누른 자리에서 퍼지는 눈송이
@@ -744,6 +820,8 @@ function countUpDday() {
     }
     if (flakes.some((f) => f.dead)) flakes = flakes.filter((f) => !f.dead);
     drawPile();
+    walkCat(dt);
+    if (man) man.style.transform = `translate(${(manX - 22).toFixed(1)}px, ${(H - surface(manX) - 52).toFixed(1)}px)`;
     requestAnimationFrame(frame);
   }
   // 쌓인 눈을 누르거나 쓸면: 그 자리 눈이 파이고 눈가루가 튀어 올랐다가 다시 떨어져 쌓임
@@ -789,7 +867,7 @@ function countUpDday() {
 
   window.addEventListener('pointerdown', (e) => {
     if (e.target.closest('.lb')) return;
-    if (nearPile(e.clientX, e.clientY)) { scoop(e.clientX, 1); return; }
+    if (nearPile(e.clientX, e.clientY)) { scoop(e.clientX, 1); buildSnowman(e.clientX); return; }
     for (let i = 0; i < 16; i++) {
       const ang = Math.random() * Math.PI * 2, sp = 50 + Math.random() * 110;
       bursts.push({
@@ -843,6 +921,8 @@ function countUpDday() {
       const card = s.firstElementChild;
       card.style.transform = `translateY(${k * 18}px) rotate(${Math.max(-1, Math.min(1, d)) * 7}deg) scale(${1 - k * 0.14})`;
       card.style.opacity = String(1 - k * 0.45);
+      card.style.setProperty('--sh', `${(Math.max(-1, Math.min(1, d)) * 130).toFixed(1)}%`);
+      card.style.setProperty('--sho', (1 - k).toFixed(2));
       if (Math.abs(d) < best) { best = Math.abs(d); active = i; }
     });
     $('#gCount').textContent = `${active + 1} / ${slides.length}`;
@@ -913,7 +993,7 @@ function copy(text, msg) {
 
 $('#copyAddr').addEventListener('click', () => copy(c.venue.address, '주소를 복사했어요'));
 document.querySelectorAll('[data-copy]').forEach((b) =>
-  b.addEventListener('click', () => copy(b.dataset.copy, '계좌번호를 복사했어요'))
+  b.addEventListener('click', () => { pawStamp(b); copy(b.dataset.copy, '계좌번호를 복사했어요'); })
 );
 $('#copyLink').addEventListener('click', () => copy(location.href, '청첩장 링크를 복사했어요'));
 // 공유하기: ① 카카오톡 공유(앱 키가 있을 때) → ② 휴대폰 공유창 → ③ 링크 복사
