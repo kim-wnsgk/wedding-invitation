@@ -4,7 +4,7 @@
 // ============================================================
 
 const W = 1080, H = 2050;
-const INK = '#2E2B38', MUTED = '#6B6775', ROSE = '#A8616E', GOLD = '#B8894F', PAPER = '#FFFEFC';
+const INK = '#3A332F', MUTED = '#7A6E66', ROSE = '#AD8550', GOLD = '#B08850', PAPER = '#FCF8F1';
 
 const loadImg = (src) => new Promise((ok, fail) => {
   const im = new Image();
@@ -58,14 +58,14 @@ export async function makeInvitationImage({ c, w, dow, dowKo, timeKo, photo, gro
     } catch { /* 사진을 못 불러오면 하늘색 바탕만 */ }
   } else {
     const sky = ctx.createLinearGradient(0, 0, 0, PH);
-    sky.addColorStop(0, '#D9E3EB');
+    sky.addColorStop(0, '#F2E9DA');
     sky.addColorStop(1, PAPER);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, PH);
   }
   const fade = ctx.createLinearGradient(0, PH - 380, 0, PH + 10);
-  fade.addColorStop(0, 'rgba(255,254,252,0)');
-  fade.addColorStop(0.6, 'rgba(255,254,252,.75)');
+  fade.addColorStop(0, 'rgba(252,248,241,0)');
+  fade.addColorStop(0.6, 'rgba(252,248,241,.75)');
   fade.addColorStop(1, PAPER);
   ctx.fillStyle = fade;
   ctx.fillRect(0, PH - 380, W, 400);
@@ -182,7 +182,7 @@ export async function makeInvitationImage({ c, w, dow, dowKo, timeKo, photo, gro
   } catch { /* 캐릭터 없이 */ }
 
   // ④ 테두리 · 주소
-  ctx.strokeStyle = 'rgba(168,97,110,.28)';
+  ctx.strokeStyle = 'rgba(173,133,80,.32)';
   ctx.lineWidth = 2;
   ctx.strokeRect(28, 28, W - 56, H - 56);
   if (siteUrl) {

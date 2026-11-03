@@ -3,7 +3,7 @@ import { config as c } from './config.js';
 import { groom, bride, cat } from './characters.js';
 import { makeInvitationImage } from './saveImage.js';
 import { renderMusicBox } from './musicbox.js';
-import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes, constellation } from './effects.js';
+import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, initFog, frostCorner, initTitleSnow, initEyes, constellation, pressed, typeOut, initNap } from './effects.js';
 
 // ---------- 유틸 ----------
 const $ = (sel) => document.querySelector(sel);
@@ -162,6 +162,7 @@ $('#app').innerHTML = `
   }
 
   <section class="greet rv">
+    ${pressed('flower', 'pf-tr', 18)}${pressed('sprig', 'pf-bl', -24)}
     <div class="eyebrow">Invitation</div>
     <h2>${esc(c.greeting.title)}</h2>
     ${c.greeting.paragraphs.map((p) => `<p>${p.map((l, k) => `<span class="ln" style="--k:${k}">${esc(l)}</span>`).join('<br>')}</p>`).join('')}
@@ -180,16 +181,18 @@ $('#app').innerHTML = `
       <div><span class="pa">${esc(c.groom.father)} · ${esc(c.groom.mother)}</span><span class="rel">의 ${esc(c.groom.relation.trim())}</span><b>${esc(c.groom.name)}</b></div>
       <div><span class="pa">${esc(c.bride.father)} · ${esc(c.bride.mother)}</span><span class="rel">의 ${esc(c.bride.relation.trim())}</span><b>${esc(c.bride.name)}</b></div>
     </div>
+    <div class="wax" aria-hidden="true"><span>${esc(fx.monogram || 'J&J')}</span></div>
   </section>
 
   ${
     galleryThumb.length
       ? `<section class="rv">
+    ${pressed('leaf', 'pf-tl', -12)}
     <div class="eyebrow">Gallery</div>
     <h2>우리의 사진</h2>
     <div class="carousel" id="gallery"><div class="track">
       ${galleryThumb
-        .map((src, i) => `<button type="button" class="slide" data-i="${i}" aria-label="사진 ${i + 1} 크게 보기">
+        .map((src, i) => `<button type="button" class="slide" data-i="${i}" style="--i:${Math.min(i, 4)}" aria-label="사진 ${i + 1} 크게 보기">
           <span class="polaroid"><img style="--i:${Math.min(i, 3)}" src="${src}" alt="" loading="lazy" draggable="false"><small>${pad(i + 1)}</small></span>
         </button>`)
         .join('')}
@@ -205,8 +208,9 @@ $('#app').innerHTML = `
   }
 
   <section class="rv">
+    ${pressed('flower', 'pf-tr2', -30)}
     <div class="eyebrow">Wedding Day</div>
-    <h2>${dateKo}</h2>
+    <h2 class="type">${dateKo}</h2>
     <div class="cal-head"><span>${w.year}</span>${w.month}월${cat('black', 'cat-cal')}</div>
     <div class="cal" id="cal"></div>
     <div class="dday" id="dday"></div>
@@ -382,6 +386,7 @@ initFog(reduceMotion);
 initTitleSnow(reduceMotion);
 initEyes(reduceMotion);
 initCatPoke();
+initNap(reduceMotion, 5000);
 
 // ---------- 처음 열 때: 시네마틱 오프닝 — 가운데 금선 → 이름·날짜가 차례로 올라옴 → 화면이 위아래로 갈라지며 사진 (누르면 바로 넘어감) ----------
 (() => {
@@ -426,7 +431,7 @@ const REVEAL = [
       if (delay) el.style.setProperty('--d', `${delay(i)}ms`);
     })
   );
-  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, .lights, .frost-corner, section:not(.hero)');
+  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, .lights, .frost-corner, .pressed, .wax, section:not(.hero)');
   if (reduceMotion || !('IntersectionObserver' in window)) {
     els.forEach((el) => el.classList.add('in'));
     return;
@@ -435,6 +440,7 @@ const REVEAL = [
     if (el.classList.contains('in')) return;
     el.classList.add('in');
     if (el.id === 'dday') countUpDday();
+    if (el.classList.contains('type')) typeOut(el);
     if (el.classList.contains('foot')) {
       window.dispatchEvent(new Event('flurry'));
       const sh = $('#share');
@@ -751,6 +757,18 @@ function countUpDday() {
     ctx.strokeStyle = `rgba(110,140,168,${a * 0.38})`;
     ctx.stroke();
   }
+  // 금박 가루: 반짝이며 도는 작은 금 조각
+  function glitter(x, y, r, rot, a) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot * 3);
+    ctx.scale(1, Math.abs(Math.cos(rot * 4)) * 0.8 + 0.2);
+    ctx.fillStyle = `rgba(214,178,108,${a})`;
+    ctx.fillRect(-r / 2, -r / 2, r, r);
+    ctx.fillStyle = `rgba(255,240,200,${a * 0.8})`;
+    ctx.fillRect(-r / 2, -r / 2, r / 2, r / 2);
+    ctx.restore();
+  }
   // 당일에 함께 흩날리는 분홍 꽃잎
   function petal(x, y, r, rot, a) {
     ctx.save();
@@ -828,7 +846,8 @@ function countUpDday() {
         continue;
       }
       const a = Math.min(1, p.life / 0.8);
-      if (p.crystal) crystal(p.x, p.y, p.r, p.rot, a);
+      if (p.gold) glitter(p.x, p.y, p.r + 1.4, p.rot, a);
+      else if (p.crystal) crystal(p.x, p.y, p.r, p.rot, a);
       else dot(p.x, p.y, p.r, a);
     }
     if (flakes.some((f) => f.dead)) flakes = flakes.filter((f) => !f.dead);
@@ -887,7 +906,7 @@ function countUpDday() {
         x: e.clientX, y: e.clientY,
         vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 40,
         r: i % 4 === 0 ? 4 + Math.random() * 3 : 1 + Math.random() * 2,
-        crystal: i % 4 === 0, rot: Math.random() * 3, spin: (Math.random() - 0.5) * 6,
+        crystal: i % 4 === 0, gold: i % 4 === 2, rot: Math.random() * 3, spin: (Math.random() - 0.5) * 6,
         life: 1.1 + Math.random() * 0.6,
       });
     }

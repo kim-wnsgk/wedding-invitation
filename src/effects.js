@@ -18,8 +18,9 @@ export function getMode(w) {
   return today < day ? 'before' : today === day ? 'dday' : 'after';
 }
 
-// ---------- 스크롤할수록 아침 → 한낮 → 노을 → 겨울밤 (바탕색이 아주 은은하게) + 밤에는 별 ----------
-const SKY = [[0, [255, 254, 252]], [0.35, [255, 251, 244]], [0.62, [253, 243, 239]], [0.84, [242, 241, 248]], [1, [236, 239, 247]]];
+// ---------- 스크롤할수록 아침 → 오후 → 노을 → 저녁 (바탕색이 아주 은은하게) + 끝에는 별 ----------
+// 아침 햇살 → 황금빛 오후 → 노을 → 라일락빛 저녁
+const SKY = [[0, [252, 248, 241]], [0.4, [250, 243, 230]], [0.7, [249, 237, 229]], [1, [240, 234, 240]]];
 let stars = null, lastSky = -1;
 export function setSky(p, reduceMotion) {
   if (Math.abs(p - lastSky) < 0.004) return;
@@ -39,6 +40,7 @@ export function setSky(p, reduceMotion) {
     document.body.appendChild(stars);
   }
   stars.style.opacity = Math.max(0, (p - 0.72) / 0.28).toFixed(3);
+  setRays(p, reduceMotion);
 
 }
 
@@ -265,4 +267,81 @@ export function initEyes(reduceMotion) {
     set(window.innerWidth / 2, y > lastY ? window.innerHeight + 200 : -200);
     lastY = y;
   }, { passive: true });
+}
+
+// ---------- 말린 꽃잎(압화) 장식: 섹션에 들어서면 한 장씩 살포시 내려앉음 ----------
+const PRESSED = {
+  flower: `<g fill="#E7B9BF" stroke="#C99199" stroke-width=".5">${[0, 72, 144, 216, 288].map((a) => `<ellipse cx="20" cy="11" rx="5.2" ry="8" transform="rotate(${a} 20 20)"/>`).join('')}</g><circle cx="20" cy="20" r="3.4" fill="#E9C77E"/>`,
+  leaf: '<path d="M6 36C10 22 18 10 34 4 31 20 22 31 6 36Z" fill="#B7C4A2" stroke="#93A37E" stroke-width=".6"/><path d="M8 34C16 24 23 15 31 7" stroke="#93A37E" stroke-width=".7" fill="none"/>',
+  sprig: `<path d="M20 38V8M20 22l-7-6M20 16l6-5M20 28l7-5" stroke="#A9B796" stroke-width="1" fill="none"/>${[[20, 6], [13, 15], [26, 10], [27, 22], [12, 21]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#FBF6EC" stroke="#D8CDBA" stroke-width=".5"/>`).join('')}`,
+};
+export function pressed(kind, cls, rot = 0) {
+  return `<svg class="pressed ${cls}" style="--r:${rot}deg" viewBox="0 0 40 40" aria-hidden="true">${PRESSED[kind]}</svg>`;
+}
+
+// ---------- 타자기: 글자가 한 자씩 찍히고 커서가 깜빡임 ----------
+export function typeOut(el) {
+  const text = el.dataset.text || (el.dataset.text = el.textContent);
+  clearInterval(el._tw);
+  el.style.minHeight = `${el.offsetHeight}px`;
+  el.innerHTML = '<span class="tw"></span><i class="tw-caret"></i>';
+  const out = el.firstChild;
+  let i = 0;
+  el._tw = setInterval(() => {
+    out.textContent = text.slice(0, ++i);
+    if (i >= text.length) { clearInterval(el._tw); setTimeout(() => el.lastChild?.classList.add('done'), 1800); }
+  }, 70);
+}
+
+// ---------- 노을 햇살: 스크롤이 노을 구간에 들어서면 위에서 따뜻한 빛줄기 ----------
+let rays = null;
+export function setRays(p, reduceMotion) {
+  if (reduceMotion) return;
+  if (!rays) {
+    rays = document.createElement('div');
+    rays.className = 'sunrays';
+    rays.setAttribute('aria-hidden', 'true');
+    rays.innerHTML = '<i></i><i></i><i></i><i></i>';
+    document.body.appendChild(rays);
+  }
+  rays.style.opacity = Math.max(0, 1 - Math.abs(p - 0.68) / 0.16).toFixed(3);
+}
+
+// ---------- 고양이 낮잠: 화면을 5초 동안 건드리지 않으면 하품하고 동그랗게 잠듦 ----------
+export function initNap(reduceMotion, idleMs = 5000) {
+  if (reduceMotion) return;
+  const root = document.documentElement;
+  let timer = 0, zz = [];
+  const wake = () => {
+    if (root.classList.contains('napping') || root.classList.contains('yawning')) {
+      root.classList.remove('napping', 'yawning');
+      zz.forEach((z) => z.remove());
+      zz = [];
+    }
+    clearTimeout(timer);
+    timer = setTimeout(sleep, idleMs);
+  };
+  const sleep = () => {
+    root.classList.add('yawning');
+    setTimeout(() => {
+      if (!root.classList.contains('yawning')) return;
+      root.classList.replace('yawning', 'napping');
+      // 화면에 보이는 고양이 머리 위에 Zz
+      document.querySelectorAll('.cat').forEach((c) => {
+        if (c.closest('.walk')) return;
+        const r = c.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight || !r.width) return;
+        const z = document.createElement('span');
+        z.className = 'zz';
+        z.setAttribute('aria-hidden', 'true');
+        z.innerHTML = 'z<b>z</b><i>z</i>';
+        z.style.left = `${r.right - r.width * 0.25 + window.scrollX}px`;
+        z.style.top = `${r.top + window.scrollY}px`;
+        document.body.appendChild(z);
+        zz.push(z);
+      });
+    }, 900);
+  };
+  ['scroll', 'pointerdown', 'pointermove', 'touchstart', 'keydown', 'wheel'].forEach((ev) => window.addEventListener(ev, wake, { passive: true }));
+  wake();
 }
