@@ -18,8 +18,13 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,500;1,500&family=Great+Vibes&family=Cormorant+Garamond:wght@500;600&display=swap"
     />
-    <script type="module" crossorigin src="./assets/index-SKJ2FyfX.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CudZn3YV.css">
+    <!-- 주소 끝에 ?admin 을 붙이면 신랑·신부 관리 페이지(admin.html)로 이동 -->
+    <script>
+      if (/[?&]admin(=|&|$)/.test(location.search)) location.replace('admin.html' + location.search);
+    </script>
+    <script type="module" crossorigin src="./assets/main-Do01boSK.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/config-mrYz-h87.js">
+    <link rel="stylesheet" crossorigin href="./assets/main-KlkPhD8T.css">
     <meta property="og:image" content="https://kim-wnsgk.github.io/wedding-invitation/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
