@@ -85,6 +85,15 @@ export const config = {
 
   closing: '함께해 주셔서 감사합니다.',
 
+  // 참석 여부 · 방명록 (Firebase 무료 요금제) — README 의 'Firebase 설정' 순서대로 만든 뒤 값을 붙여 넣으세요.
+  // 비워 두면 두 섹션은 화면에 나오지 않아요. (주소 끝에 ?demo 를 붙이면 이 브라우저에만 저장되는 미리보기)
+  firebase: {
+    apiKey: 'AIzaSyAf8PKky8JZyQLSzW6wRBEtvtJzICDmntY',
+    authDomain: 'jj-wedding-43c18.firebaseapp.com',
+    projectId: 'jj-wedding-43c18',
+    appId: '1:713520814068:web:7c9b4412ec7ce707a08ba1',
+  },
+
   // 카카오톡 공유하기 — https://developers.kakao.com 에서 앱을 만들고 'JavaScript 키'를 넣으세요.
   // 비워 두면 휴대폰 공유창(지원 안 되면 링크 복사)으로 동작합니다. 자세한 방법은 README 참고.
   kakao: {

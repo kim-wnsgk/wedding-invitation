@@ -29,7 +29,9 @@ export function setSky(p, reduceMotion) {
   while (i < SKY.length - 1 && SKY[i][0] < p) i++;
   const [p0, c0] = SKY[i - 1], [p1, c1] = SKY[i], t = Math.min(1, Math.max(0, (p - p0) / (p1 - p0)));
   const rgb = c0.map((v, k) => Math.round(v + (c1[k] - v) * t));
-  document.documentElement.style.setProperty('--card', `rgb(${rgb.join(',')})`);
+  // 페이지 전체 색 변수(--card)를 바꾸면 스크롤마다 모든 요소를 다시 계산해서 버벅임 → 바탕 카드 색만 바꿈
+  const wrap = document.querySelector('.wrap');
+  if (wrap) wrap.style.backgroundColor = `rgb(${rgb.join(',')})`;
   if (reduceMotion) return;
   if (!stars) {
     stars = document.createElement('div');
@@ -181,13 +183,6 @@ export function initEyes(reduceMotion) {
   const set = (x, y) => { px = x; py = y; if (!queued) { queued = true; requestAnimationFrame(look); } };
   window.addEventListener('pointerdown', (e) => set(e.clientX, e.clientY), { passive: true });
   window.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') set(e.clientX, e.clientY); }, { passive: true });
-  // 스크롤할 때는 내려가는 쪽(아래)·올라가는 쪽(위)을 바라봄
-  let lastY = window.scrollY;
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY;
-    set(window.innerWidth / 2, y > lastY ? window.innerHeight + 200 : -200);
-    lastY = y;
-  }, { passive: true });
 }
 
 // ---------- 말린 꽃잎(압화) 장식: 섹션에 들어서면 한 장씩 살포시 내려앉음 ----------

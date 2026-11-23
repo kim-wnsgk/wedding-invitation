@@ -130,7 +130,7 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 .walk-fill{position:absolute;bottom:3px;height:2px;width:calc(50% - 10px);background:var(--rose);opacity:.75;transform:scaleX(0)}
 .walk-fill-l{left:10px;transform-origin:0 50%}
 .walk-fill-r{right:10px;transform-origin:100% 50%}
-.walker{position:absolute;bottom:4px;display:flex;align-items:flex-end;gap:1px;filter:drop-shadow(0 0 1.5px rgba(255,255,255,.95)) drop-shadow(0 1px 2px rgba(46,43,56,.18))}
+.walker{position:absolute;bottom:4px;display:flex;align-items:flex-end;gap:1px}
 .w-g{left:8px}
 .w-b{right:8px}
 .walker .ch{height:32px;width:20px}
@@ -411,7 +411,7 @@ html.intro-on{overflow:hidden}
 .lights{display:block;width:calc(100% + 56px);height:auto;margin:-40px -28px 14px;overflow:visible}
 .lights .bulb{fill:#E8E2DB;stroke:#CFC5BC;stroke-width:.6;transition:fill .35s ease calc(var(--i) * .13s + .2s),stroke .35s ease calc(var(--i) * .13s + .2s)}
 .lights.in .bulb{fill:#FFD37E;stroke:#F2B850;filter:drop-shadow(0 0 4px rgba(255,190,80,.9));animation:bulb 3.2s ease-in-out calc(var(--i) * .13s + 1.8s) infinite}
-@keyframes bulb{50%{fill:#FFE8B0;filter:drop-shadow(0 0 8px rgba(255,205,110,1))}}
+@keyframes bulb{50%{fill:#FFEBC0;opacity:.82}}
 
 @media (prefers-reduced-motion:reduce){
   .foil,.lights *,.veh *,.stars i{animation:none!important}
@@ -450,7 +450,7 @@ html.intro-on{overflow:hidden}
 .snow-cat.flip svg{scale:-1 1}
 
 /* ---------- 눈사람: 누를 때마다 한 단계씩 ---------- */
-.snowman{position:fixed;left:0;top:0;width:44px;height:56px;z-index:46;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(80,110,145,.25))}
+.snowman{position:fixed;left:0;top:0;width:44px;height:56px;z-index:46;pointer-events:none}
 .snowman svg{width:100%;height:100%;overflow:visible}
 .snowman g,.snowman .sm-ball{transform-box:fill-box;transform-origin:50% 100%;transition:transform .5s cubic-bezier(.3,1.6,.5,1),opacity .3s}
 .snowman .sm-ball{transform:scale(.45)}
@@ -562,7 +562,7 @@ section h2{position:relative}
 .constellation{display:block;width:min(58vw,220px);height:auto;margin:-14px auto 26px;overflow:visible}
 .c-lines path{fill:none;stroke:rgba(201,168,102,.7);stroke-width:.7;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 2.4s ease .3s}
 .foot.in .c-lines path{stroke-dashoffset:0}
-.c-star{fill:#D9BE82;filter:drop-shadow(0 0 3px rgba(255,226,160,.95));animation:star 2.6s ease-in-out var(--d) infinite}
+.c-star{fill:#D9BE82;animation:star 2.6s ease-in-out var(--d) infinite}
 
 /* ---------- 3. 맨 위로 썰매 ---------- */
 .to-top{display:flex;align-items:center;gap:6px;margin:26px auto 0;padding:9px 18px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.7);font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
@@ -597,7 +597,7 @@ section h2{position:relative}
 /* ---------- 첫 화면 사진 위로 천천히 떠오르는 빛망울 ---------- */
 .bokeh{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}
 .bokeh i{position:absolute;bottom:18%;width:var(--s);height:var(--s);border-radius:50%;opacity:0;
-  background:radial-gradient(circle,rgba(255,240,214,.95) 0,rgba(255,226,180,.55) 45%,rgba(255,226,180,0) 72%);mix-blend-mode:screen;filter:blur(.6px);
+  background:radial-gradient(circle,rgba(255,240,214,.95) 0,rgba(255,226,180,.55) 45%,rgba(255,226,180,0) 72%);
   animation:bokeh var(--t) ease-in-out var(--d) infinite}
 @keyframes bokeh{0%{opacity:0;transform:translateY(0) scale(.6)}20%{opacity:.9}70%{opacity:.6}100%{opacity:0;transform:translate(14px,-320px) scale(1.15)}}
 .intro-on .bokeh i{animation-play-state:paused}
@@ -655,8 +655,8 @@ h2.type{filter:none!important;transform:none!important}
 @keyframes hang{0%{opacity:0;transform:translateY(-90px) rotate(-9deg)}45%{opacity:1;transform:translateY(5px) rotate(4deg)}70%{transform:rotate(-2deg)}88%{transform:rotate(.8deg)}100%{transform:none}}
 
 /* ---------- 노을 햇살 ---------- */
-.sunrays{position:fixed;inset:0;z-index:42;pointer-events:none;opacity:0;overflow:hidden;mix-blend-mode:soft-light}
-.sunrays i{position:absolute;top:-30%;right:-10%;width:34%;height:150%;background:linear-gradient(180deg,rgba(255,210,150,.75),rgba(255,210,150,0) 75%);transform-origin:top right;filter:blur(14px);animation:ray 9s ease-in-out infinite alternate}
+.sunrays{position:fixed;inset:0;z-index:42;pointer-events:none;opacity:0;overflow:hidden}
+.sunrays i{position:absolute;top:-30%;right:-10%;width:34%;height:150%;background:linear-gradient(180deg,rgba(255,214,160,.32),rgba(255,214,160,0) 75%);transform-origin:top right;animation:ray 9s ease-in-out infinite alternate}
 .sunrays i:nth-child(1){transform:rotate(28deg)}
 .sunrays i:nth-child(2){transform:rotate(40deg);width:18%;animation-delay:-3s}
 .sunrays i:nth-child(3){transform:rotate(52deg);width:26%;animation-delay:-6s}
@@ -760,3 +760,47 @@ h2.type{filter:none!important;transform:none!important}
   .ribbon circle,.map-pin{opacity:1!important;animation:none!important}
   .a-lines .ln{color:var(--ink);text-shadow:none}
 }
+
+/* ---------- 스크롤 부드럽게: 화면에 고정된 층은 별도로 합성 ---------- */
+.snow,.walk,.stars,.sunrays{will-change:transform;transform:translateZ(0)}
+
+/* ---------- 참석 여부 · 방명록 ---------- */
+.btn-main{padding:12px 26px;border-color:var(--rose);color:var(--rose);font-weight:700;background:rgba(173,133,80,.06)}
+.btn-main:hover{background:rgba(173,133,80,.12)}
+.btn.loading{opacity:.6;pointer-events:none}
+.pf-tr4{right:18px;top:22px;width:46px;height:46px}
+.pf-tl5{left:18px;top:24px;width:46px;height:46px}
+.gb-list{display:grid;gap:12px;margin:0 0 18px;text-align:left}
+.gb-card{position:relative;padding:14px 16px 12px;border-radius:4px;background:#FFFDF8;box-shadow:0 1px 2px rgba(60,40,20,.06),0 6px 16px rgba(60,40,20,.07);border-left:2px solid rgba(173,133,80,.55);animation:gb-in .6s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i) * 70ms)}
+.gb-card:nth-child(odd){transform:rotate(-.6deg)}
+.gb-card:nth-child(even){transform:rotate(.5deg)}
+.gb-card p{margin:0 0 8px;font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.gb-card footer{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted)}
+.gb-card b{font-weight:700;color:var(--ink)}
+.gb-card time{font-family:var(--f-en)}
+.gb-card.fresh{box-shadow:0 0 0 2px rgba(201,162,95,.55),0 8px 20px rgba(60,40,20,.12)}
+.gb-empty{margin:6px 0;text-align:center;font-size:13px;color:var(--muted)}
+.gb-more{margin:-4px 0 16px;padding:8px 18px}
+@keyframes gb-in{from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
+
+.form-modal{position:fixed;inset:0;z-index:56;display:flex;align-items:flex-end;justify-content:center;background:rgba(30,28,36,.5)}
+.form-modal[hidden]{display:none}
+.fm-box{width:100%;max-width:440px;max-height:92svh;overflow:auto;padding:22px 22px calc(18px + env(safe-area-inset-bottom,0px));border-radius:18px 18px 0 0;background:var(--card);box-shadow:0 -10px 40px rgba(0,0,0,.2);animation:fm-up .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes fm-up{from{transform:translateY(100%)}to{transform:none}}
+.fm-box h3{margin:0 0 16px;font-size:17px;text-align:center}
+.fm-seg{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;border:0}
+.fm-seg legend{width:100%;margin-bottom:6px;font-size:13px;color:var(--muted)}
+.fm-seg label{flex:1}
+.fm-seg input{position:absolute;opacity:0;pointer-events:none}
+.fm-seg span{display:block;padding:10px 6px;border:1px solid var(--line);border-radius:8px;text-align:center;font-size:14px;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.fm-seg input:checked+span{border-color:var(--rose);background:rgba(173,133,80,.1);color:var(--rose);font-weight:700}
+.fm-seg input:focus-visible+span{outline:2px solid var(--rose);outline-offset:2px}
+.fm-field{display:block;margin:0 0 14px;position:relative}
+.fm-field>span{display:block;margin-bottom:6px;font-size:13px;color:var(--muted)}
+.fm-field input,.fm-field select,.fm-field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#FFFDF8;font:inherit;font-size:15px;color:var(--ink)}
+.fm-field textarea{resize:none}
+.fm-field input:focus,.fm-field select:focus,.fm-field textarea:focus{outline:none;border-color:var(--rose)}
+.fm-count{position:absolute;right:8px;bottom:8px;font-size:11px;color:var(--muted)}
+.fm-attend[hidden]{display:none}
+.fm-btns{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:6px}
+.fm-btns .btn{padding:12px}

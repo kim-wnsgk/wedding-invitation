@@ -3,6 +3,7 @@ import { config as c } from './config.js';
 import { groom, bride, cat } from './characters.js';
 import { makeInvitationImage } from './saveImage.js';
 import { renderMusicBox } from './musicbox.js';
+import { openStore } from './guestbook.js';
 import { timeHello, ribbon, heartLine, mapPin, clockFace, setClock, initLanterns, heartBurst, heartRain, flyEnvelope, bells, initPeekCats } from './extras.js';
 import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, frostCorner, initTitleSnow, initEyes, constellation, pressed, typeOut, initNap } from './effects.js';
 
@@ -263,6 +264,23 @@ $('#app').innerHTML = `
       : ''
   }
 
+  <section class="rv rsvp-sec" id="rsvpSec" hidden>
+    ${pressed('flower', 'pf-tr4', 12)}
+    <div class="eyebrow">R.S.V.P</div>
+    <h2>참석 여부를 알려 주세요</h2>
+    <p class="note">원활한 예식 준비를 위해<br>참석 여부를 미리 알려 주시면 감사하겠습니다.</p>
+    <button class="btn btn-main" type="button" id="rsvpOpen">참석 여부 전달하기</button>
+  </section>
+
+  <section class="rv gb-sec" id="gbSec" hidden>
+    ${pressed('leaf', 'pf-tl5', -18)}
+    <div class="eyebrow">Guestbook</div>
+    <h2>축하의 한마디</h2>
+    <div class="gb-list" id="gbList"><p class="gb-empty">불러오는 중…</p></div>
+    <button class="btn gb-more" type="button" id="gbMore" hidden>더보기</button>
+    <button class="btn btn-main" type="button" id="gbOpen">축하 메시지 남기기</button>
+  </section>
+
   <section class="foot rv">
     ${pressed('flower', 'pf-tr3', 24)}${pressed('flower', 'pf-tl4', -40)}
     ${constellation()}
@@ -304,6 +322,38 @@ $('#app').innerHTML = `
       <button class="btn" type="button" id="saveClose">닫기</button>
     </div>
   </div>
+</div>
+<div class="form-modal" id="rsvpModal" hidden role="dialog" aria-modal="true" aria-labelledby="rsvpTitle">
+  <form class="fm-box" id="rsvpForm">
+    <h3 id="rsvpTitle">참석 여부 전달</h3>
+    <fieldset class="fm-seg"><legend>어느 쪽 하객이신가요?</legend>
+      <label><input type="radio" name="side" value="groom" required><span>신랑측</span></label>
+      <label><input type="radio" name="side" value="bride"><span>신부측</span></label>
+    </fieldset>
+    <label class="fm-field"><span>성함</span><input name="name" maxlength="20" required autocomplete="name"></label>
+    <fieldset class="fm-seg"><legend>참석 여부</legend>
+      <label><input type="radio" name="attend" value="yes" checked><span>참석할게요</span></label>
+      <label><input type="radio" name="attend" value="no"><span>마음만 전할게요</span></label>
+    </fieldset>
+    <div class="fm-attend">
+      <label class="fm-field"><span>참석 인원 (본인 포함)</span><select name="count">${[1, 2, 3, 4, 5, 6].map((k) => `<option value="${k}">${k}명</option>`).join('')}</select></label>
+      <fieldset class="fm-seg"><legend>식사</legend>
+        <label><input type="radio" name="meal" value="yes" checked><span>할게요</span></label>
+        <label><input type="radio" name="meal" value="no"><span>안 할게요</span></label>
+        <label><input type="radio" name="meal" value="unknown"><span>미정</span></label>
+      </fieldset>
+    </div>
+    <label class="fm-field"><span>남기실 말 (선택)</span><textarea name="note" maxlength="200" rows="2"></textarea></label>
+    <div class="fm-btns"><button type="button" class="btn" data-close>취소</button><button type="submit" class="btn btn-main">전달하기</button></div>
+  </form>
+</div>
+<div class="form-modal" id="gbModal" hidden role="dialog" aria-modal="true" aria-labelledby="gbTitle">
+  <form class="fm-box" id="gbForm">
+    <h3 id="gbTitle">축하 메시지 남기기</h3>
+    <label class="fm-field"><span>이름</span><input name="name" maxlength="12" required></label>
+    <label class="fm-field"><span>메시지</span><textarea name="message" maxlength="200" rows="4" required></textarea><small class="fm-count" id="gbCount">0 / 200</small></label>
+    <div class="fm-btns"><button type="button" class="btn" data-close>취소</button><button type="submit" class="btn btn-main">남기기</button></div>
+  </form>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 `;
@@ -558,7 +608,10 @@ function countUpDday() {
   hit.setAttribute('aria-hidden', 'true');
   document.body.appendChild(hit);
   let hitH = 0;
-  const ctx = cv.getContext('2d');
+  let ctx = cv.getContext('2d');
+  // 쌓인 눈만 따로 그려 두는 캔버스
+  const pileCv = document.createElement('canvas'), pctx = pileCv.getContext('2d'), PILE_H = 90;
+  let pileAt = -1, pileDirty = true, pdpr = 1;
   let W = 0, H = 0, flakes = [], bursts = [], last = 0, time = 0;
   // 빠르게 스크롤하면 눈송이가 바람에 휩쓸리듯 휘날림
   let swirl = 0, lastScroll = window.scrollY;
@@ -712,12 +765,24 @@ function countUpDday() {
     if (Math.abs(ph - hitH) > 2) { hitH = ph; hit.style.height = `${ph}px`; }
     // 뾰족해지지 않게 조금씩 고르게 → 바람에 다듬어진 듯 완만한 눈 더미
     smooth(pile, 0.05);
-    // 아래
-    paintDrift(() => {
-      ctx.moveTo(-2, H + 2);
-      curve(pile.map((h, i) => [i * STEP, H - h]));
-      ctx.lineTo(W + 2, H + 2);
-    }, pileFill, 0, 1);
+    // 쌓인 눈은 0.1초마다만 새로 그리고(그림자 효과가 무거움), 매 프레임엔 그려 둔 그림을 붙임
+    if (time - pileAt > 0.1 || pileDirty) {
+      pileAt = time;
+      pileDirty = false;
+      const top = H - PILE_H;
+      pctx.setTransform(pdpr, 0, 0, pdpr, 0, -top * pdpr);
+      pctx.clearRect(0, top, W, PILE_H);
+      const real = ctx;
+      ctx = pctx;
+      // 아래
+      paintDrift(() => {
+        ctx.moveTo(-2, H + 2);
+        curve(pile.map((h, i) => [i * STEP, H - h]));
+        ctx.lineTo(W + 2, H + 2);
+      }, pileFill, 0, 1);
+        ctx = real;
+    }
+    ctx.drawImage(pileCv, 0, H - PILE_H, W, PILE_H);
     // 윗면에서 반짝이는 눈 결정
     for (const s of sparkles) {
       const a = Math.pow(Math.max(0, Math.sin(time * 1.5 + s.ph)), 10);
@@ -754,7 +819,7 @@ function countUpDday() {
     };
   };
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     // 휴대폰은 스크롤할 때 주소창이 숨으며 높이만 바뀜 → 그때는 쌓인 눈을 그대로 둠
     const widthChanged = window.innerWidth !== W;
     W = window.innerWidth;
@@ -763,13 +828,17 @@ function countUpDday() {
     cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // 윗면은 햇빛 받은 흰색, 깊어질수록 푸르스름한 그늘
+    pdpr = dpr;
+    pileCv.width = W * dpr;
+    pileCv.height = PILE_H * dpr;
+    pileDirty = true;
     pileFill = ctx.createLinearGradient(0, H - MAX, 0, H);
     pileFill.addColorStop(0, '#FFFFFF');
     pileFill.addColorStop(0.35, '#F7FAFC');
     pileFill.addColorStop(1, '#DCE6EF');
     if (widthChanged) {
       initPile();
-      const n = Math.max(50, Math.min(130, Math.round((W * H) / 6500)));
+      const n = Math.max(40, Math.min(85, Math.round((W * H) / 8500)));
       flakes = Array.from({ length: n }, () => make(false));
     }
   }
@@ -887,6 +956,7 @@ function countUpDday() {
   // 쌓인 눈을 누르거나 쓸면: 그 자리 눈이 파이고 눈가루가 튀어 올랐다가 다시 떨어져 쌓임
   const nearPile = (x, y) => y > H - surface(x) - 36;
   function scoop(x, power) {
+    pileDirty = true;
     const rad = 18 + power * 14, c0 = Math.round(x / STEP), rc = Math.round(rad / STEP);
     for (let k = -rc; k <= rc; k++) {
       const i = c0 + k;
@@ -1307,3 +1377,94 @@ if (bgm || fx.music !== false) {
   // 다른 앱으로 나가면 잠시 멈춤
   document.addEventListener('visibilitychange', () => { if (document.hidden && !audio.paused) { audio.pause(); b.classList.remove('on'); } });
 }
+
+// ---------- 참석 여부 · 방명록 (Firebase, 설정이 없으면 섹션을 숨김 / ?demo 는 미리보기) ----------
+openStore(c.firebase).then((store) => {
+  if (!store) return;
+  $('#rsvpSec').hidden = false;
+  $('#gbSec').hidden = false;
+
+  // 입력 창: 열면 방문 기록을 쌓아서 휴대폰 뒤로가기로 닫히게
+  const modal = (el) => {
+    const hide = () => { if (el.hidden) return; el.hidden = true; document.body.style.overflow = ''; };
+    const close = () => { if (history.state?.fm === el.id) history.back(); else hide(); };
+    window.addEventListener('popstate', hide);
+    el.addEventListener('click', (e) => { if (e.target === el || e.target.closest('[data-close]')) close(); });
+    return {
+      show() { el.hidden = false; document.body.style.overflow = 'hidden'; history.pushState({ fm: el.id }, ''); },
+      close,
+    };
+  };
+  const busy = (form, on) => { const b = form.querySelector('[type=submit]'); b.disabled = on; b.classList.toggle('loading', on); };
+
+  // ----- 참석 여부 -----
+  const rsvp = modal($('#rsvpModal')), rForm = $('#rsvpForm');
+  $('#rsvpOpen').addEventListener('click', rsvp.show);
+  const syncAttend = () => { rForm.querySelector('.fm-attend').hidden = rForm.attend.value !== 'yes'; };
+  rForm.addEventListener('change', syncAttend);
+  syncAttend();
+  rForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(rForm), attend = f.get('attend') === 'yes';
+    busy(rForm, true);
+    try {
+      await store.addRsvp({
+        side: f.get('side'),
+        name: String(f.get('name')).trim().slice(0, 20),
+        attend,
+        count: attend ? Number(f.get('count')) : 0,
+        meal: attend ? f.get('meal') : '',
+        note: String(f.get('note') || '').trim().slice(0, 200),
+      });
+      rsvp.close();
+      rForm.reset();
+      syncAttend();
+      toast(attend ? '참석 여부를 전달했어요. 그날 뵐게요!' : '따뜻한 마음 감사합니다');
+      if (!reduceMotion) heartRain($('#rsvpOpen'));
+      $('#rsvpOpen').textContent = '참석 여부 다시 전달하기';
+    } catch {
+      toast('전달하지 못했어요. 잠시 후 다시 시도해 주세요');
+    }
+    busy(rForm, false);
+  });
+
+  // ----- 방명록 -----
+  const gb = modal($('#gbModal')), gForm = $('#gbForm'), list = $('#gbList'), more = $('#gbMore');
+  let all = [], shown = 0;
+  const card = (g, i) => `<article class="gb-card${i === 0 && g.fresh ? ' fresh' : ''}" style="--i:${i % 6}">
+    <p>${esc(g.message)}</p><footer><b>${esc(g.name)}</b><time>${g.createdAt.getMonth() + 1}.${g.createdAt.getDate()}</time></footer></article>`;
+  const render = (n) => {
+    if (!all.length) { list.innerHTML = '<p class="gb-empty">첫 번째 축하 메시지를 남겨 주세요</p>'; more.hidden = true; return; }
+    shown = Math.min(all.length, n);
+    list.innerHTML = all.slice(0, shown).map(card).join('');
+    more.hidden = shown >= all.length;
+  };
+  const load = async () => {
+    try { all = await store.listGuests(); render(6); } catch { list.innerHTML = '<p class="gb-empty">방명록을 불러오지 못했어요</p>'; }
+  };
+  // 방명록 섹션이 가까워졌을 때만 불러옴 (무료 사용량 아끼기)
+  const io = new IntersectionObserver(([en]) => { if (en.isIntersecting) { io.disconnect(); load(); } }, { rootMargin: '400px 0px' });
+  io.observe($('#gbSec'));
+  more.addEventListener('click', () => render(shown + 6));
+  $('#gbOpen').addEventListener('click', gb.show);
+  gForm.message.addEventListener('input', () => { $('#gbCount').textContent = `${gForm.message.value.length} / 200`; });
+  gForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = gForm.elements.name.value.trim().slice(0, 12), message = gForm.message.value.trim().slice(0, 200);
+    if (!name || !message) return;
+    busy(gForm, true);
+    try {
+      await store.addGuest({ name, message });
+      gb.close();
+      gForm.reset();
+      $('#gbCount').textContent = '0 / 200';
+      all.unshift({ name, message, createdAt: new Date(), fresh: true });
+      render(Math.max(6, shown + 1));
+      toast('축하 메시지를 남겼어요. 고마워요!');
+      if (!reduceMotion) heartRain($('#gbOpen'));
+    } catch {
+      toast('남기지 못했어요. 잠시 후 다시 시도해 주세요');
+    }
+    busy(gForm, false);
+  });
+});
