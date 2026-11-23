@@ -4,7 +4,7 @@
 // ============================================================
 
 const W = 1080, H = 2050;
-const INK = '#3A332F', MUTED = '#7A6E66', ROSE = '#AD8550', GOLD = '#B08850', PAPER = '#FCF8F1';
+const INK = '#3A332F', MUTED = '#7A6E66', ROSE = '#AD8550', GOLD = '#B08850', PAPER = '#FFFFFF';
 
 const loadImg = (src) => new Promise((ok, fail) => {
   const im = new Image();
@@ -58,7 +58,7 @@ export async function makeInvitationImage({ c, w, dow, dowKo, timeKo, photo, gro
     } catch { /* 사진을 못 불러오면 하늘색 바탕만 */ }
   } else {
     const sky = ctx.createLinearGradient(0, 0, 0, PH);
-    sky.addColorStop(0, '#F2E9DA');
+    sky.addColorStop(0, '#F6F3EE');
     sky.addColorStop(1, PAPER);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, PH);

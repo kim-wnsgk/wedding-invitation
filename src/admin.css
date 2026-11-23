@@ -1,7 +1,7 @@
 /* 신랑·신부 관리 페이지 — 청첩장과 같은 아이보리·골드 */
 :root{
-  --paper:#EEE7DC; --card:#FCF8F1; --ink:#3A332F; --muted:#7A6E66; --line:#E8DFD2;
-  --rose:#AD8550; --rose-soft:#EFE3CF; --sat:#6E86A8; --danger:#B4533F;
+  --paper:#F3F1EE; --card:#FFFFFF; --ink:#3A3634; --muted:#7C746E; --line:#EEEBE6;
+  --rose:#AD8550; --rose-soft:#F6EFE4; --sat:#6E86A8; --danger:#B4533F;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -58,7 +58,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ad-del:hover{border-color:var(--danger)}
 .ad-row time{margin-right:4px}
 .ad-empty{text-align:center;color:var(--muted);padding:40px 0}
-.ad-item.secret{background:#FBF6EC;border-style:dashed}
+.ad-item.secret{background:#FAF8F5;border-style:dashed}
 .ad-badge.secret{background:var(--ink);color:#fff}
 .ad-pw{display:flex;gap:8px;justify-content:center;margin:0 auto 8px;max-width:300px}
 .ad-pw input{flex:1;min-width:0;border:1px solid var(--line);border-radius:999px;padding:11px 18px;font:inherit;font-size:16px;text-align:center;letter-spacing:.3em;background:#fff}

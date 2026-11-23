@@ -1,8 +1,8 @@
-/* 청첩장 스타일 — 아이보리 종이 + 샴페인 골드. 색을 바꾸려면 :root 의 변수만 수정하세요 */
+/* 청첩장 스타일 — 화이트 + 샴페인 골드. 색을 바꾸려면 :root 의 변수만 수정하세요 */
 :root{
-  --paper:#EEE7DC; --card:#FCF8F1; --ink:#3A332F; --muted:#7A6E66; --line:#E8DFD2;
-  --rose:#AD8550; --rose-soft:#EFE3CF; --sat:#6E86A8;  /* --rose: 포인트 색(샴페인 골드) */
-  --sky:#F2E9DA; --sky-soft:#F8F2E7;  /* 첫 화면·마지막 화면의 바탕 */
+  --paper:#F3F1EE; --card:#FFFFFF; --ink:#3A3634; --muted:#7C746E; --line:#EEEBE6;
+  --rose:#AD8550; --rose-soft:#F6EFE4; --sat:#6E86A8;  /* --rose: 포인트 색(샴페인 골드) */
+  --sky:#F7F4F0; --sky-soft:#FBFAF8;  /* 첫 화면·마지막 화면의 바탕 */
   --f-ko:"Noto Serif KR",serif;
   --f-en:"Playfair Display","Times New Roman",serif;
   --f-name:"Cormorant Garamond","Playfair Display",serif;  /* 영문 이름 */
@@ -44,7 +44,7 @@ h2{font-size:19px;font-weight:700;margin:6px 0 24px;text-wrap:balance}
 /* 사진 높이 = 화면 높이 − 아래 글자 영역 → 첫 화면에 사진과 이름·날짜가 함께 보임 */
 .cover{position:relative;height:clamp(300px,calc(100vh - 390px),600px);height:clamp(300px,calc(100svh - 390px),600px);overflow:hidden;background:var(--sky-soft)}
 .cover img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
-.cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(to bottom,rgba(252,248,241,0),rgba(252,248,241,.6) 55%,var(--card))}
+.cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,255,255,.6) 55%,var(--card))}
 .hero-full .hero-in{margin-top:0;padding:0 24px}
 /* 사진이 있을 때는 영문 이름을 한 줄로 */
 .hero.hero-full .names{font-size:40px;margin:14px 0 4px;white-space:nowrap}
@@ -120,7 +120,7 @@ section+section.in::before{transform:translateX(-50%) rotate(0) scale(1)}
 /* 첫 화면 사진 아래 쌓인 눈 (화면 맨 아래에 쌓이는 눈은 main.js 캔버스) */
 .drift{position:absolute;left:0;right:0;bottom:0;height:64px;pointer-events:none;z-index:1}
 .drift svg{position:absolute;inset:0;width:100%;height:100%}
-.d-back{fill:#E9DFCF}
+.d-back{fill:#EFEBE6}
 .d-front{fill:var(--card);filter:drop-shadow(0 -2px 3px rgba(110,140,168,.2))}
 .drift i{position:absolute;width:8px;height:8px;background:#9DB6CD;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);opacity:0;animation:twinkle 2.8s ease-in-out infinite;animation-delay:calc(var(--i) * .47s)}
 @keyframes twinkle{0%,100%{transform:translate(-50%,-50%) scale(0) rotate(0);opacity:0}50%{transform:translate(-50%,-50%) scale(1) rotate(45deg);opacity:1}}
@@ -323,7 +323,7 @@ details[open] .acct:nth-of-type(3){animation-delay:.16s}
 .env{position:relative;width:var(--env-w,300px);aspect-ratio:1.5;margin:0 auto;perspective:900px}
 .env>div{position:absolute;border-radius:6px}
 .env-back{inset:0;z-index:0;background:#EFDFDB;box-shadow:0 14px 34px rgba(46,43,56,.18),0 2px 4px rgba(46,43,56,.06)}
-.env-card{left:7%;right:7%;top:7%;bottom:6%;z-index:2;background:#FFFDF8;border-radius:4px;box-shadow:0 1px 5px rgba(46,43,56,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+.env-card{left:7%;right:7%;top:7%;bottom:6%;z-index:2;background:#fff;border-radius:4px;box-shadow:0 1px 5px rgba(46,43,56,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
 /* 앞 주머니: 위가 V자로 파인 모양 + 아래 접힌 면 */
 .env-front{inset:0;z-index:3;background:linear-gradient(160deg,#F6EAE7,#F1E1DD);clip-path:polygon(0 0,50% 56%,100% 0,100% 100%,0 100%);display:flex;align-items:flex-end;justify-content:center;padding-bottom:9%}
 .env-front::before{content:"";position:absolute;inset:0;background:#EBD6D1;clip-path:polygon(0 100%,50% 52%,100% 100%);opacity:.55}
@@ -666,7 +666,7 @@ h2.type{filter:none!important;transform:none!important}
 
 /* ---------- 노을 햇살 ---------- */
 .sunrays{position:fixed;inset:0;z-index:42;pointer-events:none;opacity:0;overflow:hidden}
-.sunrays i{position:absolute;top:-30%;right:-10%;width:34%;height:150%;background:linear-gradient(180deg,rgba(255,214,160,.32),rgba(255,214,160,0) 75%);transform-origin:top right;animation:ray 9s ease-in-out infinite alternate}
+.sunrays i{position:absolute;top:-30%;right:-10%;width:34%;height:150%;background:linear-gradient(180deg,rgba(255,226,190,.16),rgba(255,226,190,0) 75%);transform-origin:top right;animation:ray 9s ease-in-out infinite alternate}
 .sunrays i:nth-child(1){transform:rotate(28deg)}
 .sunrays i:nth-child(2){transform:rotate(40deg);width:18%;animation-delay:-3s}
 .sunrays i:nth-child(3){transform:rotate(52deg);width:26%;animation-delay:-6s}
@@ -782,7 +782,7 @@ h2.type{filter:none!important;transform:none!important}
 .pf-tr4{right:18px;top:22px;width:46px;height:46px}
 .pf-tl5{left:18px;top:24px;width:46px;height:46px}
 .gb-list{display:grid;gap:12px;margin:0 0 18px;text-align:left}
-.gb-card{position:relative;padding:14px 16px 12px;border-radius:4px;background:#FFFDF8;box-shadow:0 1px 2px rgba(60,40,20,.06),0 6px 16px rgba(60,40,20,.07);border-left:2px solid rgba(173,133,80,.55);animation:gb-in .6s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i) * 70ms)}
+.gb-card{position:relative;padding:14px 16px 12px;border-radius:4px;background:#fff;box-shadow:0 1px 2px rgba(60,40,20,.06),0 6px 16px rgba(60,40,20,.07);border-left:2px solid rgba(173,133,80,.55);animation:gb-in .6s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i) * 70ms)}
 .gb-card:nth-child(odd){transform:rotate(-.6deg)}
 .gb-card:nth-child(even){transform:rotate(.5deg)}
 .gb-card p{margin:0 0 8px;font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
@@ -808,7 +808,7 @@ h2.type{filter:none!important;transform:none!important}
 .fm-seg input:focus-visible+span{outline:2px solid var(--rose);outline-offset:2px}
 .fm-field{display:block;margin:0 0 14px;position:relative}
 .fm-field>span{display:block;margin-bottom:6px;font-size:13px;color:var(--muted)}
-.fm-field input,.fm-field select,.fm-field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#FFFDF8;font:inherit;font-size:15px;color:var(--ink)}
+.fm-field input,.fm-field select,.fm-field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit;font-size:15px;color:var(--ink)}
 .fm-field textarea{resize:none}
 .fm-field input:focus,.fm-field select:focus,.fm-field textarea:focus{outline:none;border-color:var(--rose)}
 .fm-count{position:absolute;right:8px;bottom:8px;font-size:11px;color:var(--muted)}
