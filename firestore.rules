@@ -4,21 +4,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 방명록: 누구나 읽기 가능, 새 글 쓰기만 가능 (수정·삭제는 콘솔에서 두 분만)
-    match /guestbook/{id} {
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['name', 'message', 'createdAt'])
+    // 신랑·신부 관리 페이지(?admin)는 Google 로그인 없이 비밀번호 화면만 두기로 해서,
+    // 참석 여부·비공개 방명록 읽기와 삭제는 규칙에서 막지 않습니다. (수정은 계속 금지)
+
+    function validGuest() {
+      return request.resource.data.keys().hasOnly(['name', 'message', 'createdAt'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 12
         && request.resource.data.message is string
         && request.resource.data.message.size() > 0 && request.resource.data.message.size() <= 200
         && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
     }
 
-    // 참석 여부: 하객은 보내기만, 읽기는 콘솔에서 두 분만
+    // 공개 방명록
+    match /guestbook/{id} {
+      allow read, delete: if true;
+      allow create: if validGuest();
+      allow update: if false;
+    }
+
+    // 비공개 방명록 (청첩장 화면에는 나오지 않고 관리 페이지에서만 보임)
+    match /guestbook_private/{id} {
+      allow read, delete: if true;
+      allow create: if validGuest();
+      allow update: if false;
+    }
+
+    // 참석 여부
     match /rsvp/{id} {
-      allow read, update, delete: if false;
+      allow read, delete: if true;
+      allow update: if false;
       allow create: if request.resource.data.keys().hasOnly(['side', 'name', 'attend', 'count', 'meal', 'note', 'createdAt'])
         && request.resource.data.side in ['groom', 'bride']
         && request.resource.data.name is string

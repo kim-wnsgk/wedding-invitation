@@ -21,8 +21,8 @@ function ogImage() {
   return {
     name: 'og-image',
     apply: 'build',
-    transformIndexHtml(html) {
-      if (!src() || !config.siteUrl) return html;
+    transformIndexHtml(html, ctx) {
+      if (!src() || !config.siteUrl || ctx.filename.endsWith('admin.html')) return html;
       const url = new URL('og-image.jpg', config.siteUrl).href;
       return html.replace(
         '</head>',
@@ -46,6 +46,12 @@ function ogImage() {
 // base: './' 로 두면 GitHub Pages 하위 경로나 아무 폴더에 올려도 동작합니다.
 export default defineConfig({
   base: './',
+  // 청첩장(index.html) + 신랑·신부 관리 페이지(admin.html, 주소 끝에 ?admin)
+  build: {
+    rollupOptions: {
+      input: { main: path.resolve('index.html'), admin: path.resolve('admin.html') },
+    },
+  },
   plugins: [
     // photos/ 폴더 사진을 휴대폰에 맞게 줄이고 webp로 변환 (원본은 그대로 둠)
     imagetools({

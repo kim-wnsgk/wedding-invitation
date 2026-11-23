@@ -18,6 +18,10 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,500;1,500&family=Great+Vibes&family=Cormorant+Garamond:wght@500;600&display=swap"
     />
+    <!-- 주소 끝에 ?admin 을 붙이면 신랑·신부 관리 페이지(admin.html)로 이동 -->
+    <script>
+      if (/[?&]admin(=|&|$)/.test(location.search)) location.replace('admin.html' + location.search);
+    </script>
   </head>
   <body>
     <div id="app"></div>

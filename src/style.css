@@ -330,7 +330,10 @@ details[open] .acct:nth-of-type(3){animation-delay:.16s}
 .env-front span{position:relative;font-size:13px;letter-spacing:.12em;color:#9B6B73}
 .env-flap{left:0;right:0;top:0;height:60%;z-index:4;background:linear-gradient(180deg,#EAD3CE,#E3C7C1);clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:50% 0;border-radius:6px 6px 0 0}
 .env-seal{left:50%;top:60%;width:22%;aspect-ratio:1;z-index:5;transform:translate(-50%,-50%);border-radius:50%!important;display:grid;place-items:center;
-  background:radial-gradient(circle at 36% 30%,#CF93A0,#A8616E 55%,#7E4250);color:rgba(255,255,255,.92);font-family:var(--f-en);font-size:calc(var(--env-w,300px) * .06);box-shadow:0 2px 5px rgba(126,66,80,.4),inset 0 0 0 3px rgba(0,0,0,.08)}
+  background:radial-gradient(circle at 36% 30%,#DDBB86,#AD8550 55%,#83623A);box-shadow:0 2px 5px rgba(110,80,40,.4),inset 0 0 0 3px rgba(0,0,0,.08)}
+.env-seal .rings{width:72%}
+.env-seal .rings .rg{stroke-dashoffset:0;fill:none;stroke:rgba(255,255,255,.92);stroke-width:2.4}
+.env-seal .rg-gem{fill:rgba(255,255,255,.92)}
 
 /* 맨 위: 화면 가득 봉투 → 실링이 떨어지고 덮개가 열리고 카드가 나온 뒤, 카드 속으로 들어가듯 사라짐 */
 html.intro-on{overflow:hidden}
@@ -636,14 +639,21 @@ h2.type{filter:none!important;transform:none!important}
 .pf-tl4{left:18px;top:250px;width:40px;height:40px}
 
 /* ---------- 밀랍 도장: 인사말 끝에서 쿵 찍히고 살짝 번짐 ---------- */
-.wax{position:relative;width:56px;height:56px;margin:30px auto 0;border-radius:50%;display:grid;place-items:center;opacity:0;
-  background:radial-gradient(circle at 36% 30%,#CF93A0,#A8616E 55%,#7E4250);box-shadow:0 2px 5px rgba(126,66,80,.35),inset 0 0 0 4px rgba(0,0,0,.07)}
-.wax span{font-family:var(--f-name);font-weight:600;font-size:17px;color:rgba(255,255,255,.9);letter-spacing:.02em}
-.wax::before{content:"";position:absolute;inset:-5px;border-radius:46% 54% 50% 50% / 52% 48% 52% 48%;background:radial-gradient(circle,rgba(168,97,110,.5),rgba(168,97,110,0) 70%);z-index:-1;opacity:0}
-.wax.in{animation:wax-stamp .7s cubic-bezier(.3,1.5,.5,1) .4s both}
-.wax.in::before{animation:wax-spread .9s ease .65s both}
-@keyframes wax-stamp{0%{opacity:0;transform:scale(2.2) rotate(-25deg)}60%{opacity:1;transform:scale(.9) rotate(3deg)}100%{opacity:1;transform:none}}
-@keyframes wax-spread{from{opacity:.9;transform:scale(.7)}to{opacity:.5;transform:scale(1.18)}}
+.wax{position:relative;width:84px;height:58px;margin:30px auto 0;opacity:0}
+.wax .rings{width:100%;height:100%;overflow:visible}
+.rings .rg{fill:none;stroke:var(--rose);stroke-width:1.6;stroke-dasharray:1;stroke-dashoffset:1}
+.rings .rg-gem{fill:var(--rose);opacity:0;transform-origin:39px 10px}
+.wax i{position:absolute;width:6px;height:6px;opacity:0;background:var(--rose);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.wax i:nth-of-type(1){left:4%;top:18%}.wax i:nth-of-type(2){right:2%;top:46%;width:5px;height:5px}.wax i:nth-of-type(3){left:46%;bottom:-6%;width:4px;height:4px}
+.wax.in{opacity:1}
+.wax.in .rg-l{animation:rg-draw 1.1s ease .3s forwards}
+.wax.in .rg-r{animation:rg-draw 1.1s ease .75s forwards}
+.wax.in .rg-gem{animation:rg-gem .5s cubic-bezier(.3,1.6,.5,1) 1.6s forwards}
+.wax.in i{animation:rg-twinkle 2.4s ease-in-out infinite}
+.wax.in i:nth-of-type(1){animation-delay:1.9s}.wax.in i:nth-of-type(2){animation-delay:2.4s}.wax.in i:nth-of-type(3){animation-delay:2.9s}
+@keyframes rg-draw{to{stroke-dashoffset:0}}
+@keyframes rg-gem{from{opacity:0;transform:scale(0) rotate(-45deg)}to{opacity:1;transform:none}}
+@keyframes rg-twinkle{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:.9;transform:scale(1)}}
 
 /* ---------- 폴라로이드 빨랫줄: 줄에 매달려 흔들리며 내려옴 ---------- */
 .carousel{position:relative}
@@ -679,6 +689,7 @@ h2.type{filter:none!important;transform:none!important}
 
 @media (prefers-reduced-motion:reduce){
   section:not(.hero)>.eyebrow.a,.pressed,.wax,.carousel .slide{transition:none!important;animation:none!important;opacity:1;clip-path:none;transform:none}
+  .wax .rg{stroke-dashoffset:0!important}.wax .rg-gem{opacity:1!important}
   section:not(.hero)>.eyebrow.a{color:var(--rose)}
   .sunrays{display:none}
 }
@@ -801,6 +812,9 @@ h2.type{filter:none!important;transform:none!important}
 .fm-field textarea{resize:none}
 .fm-field input:focus,.fm-field select:focus,.fm-field textarea:focus{outline:none;border-color:var(--rose)}
 .fm-count{position:absolute;right:8px;bottom:8px;font-size:11px;color:var(--muted)}
+.fm-check{display:flex;align-items:center;gap:8px;margin:-4px 0 14px;font-size:14px;cursor:pointer}
+.fm-check input{width:18px;height:18px;margin:0;accent-color:var(--rose)}
+.fm-check small{display:block;font-size:11px;color:var(--muted);line-height:1.4}
 .fm-attend[hidden]{display:none}
 .fm-btns{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:6px}
 .fm-btns .btn{padding:12px}

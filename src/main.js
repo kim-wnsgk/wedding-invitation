@@ -64,6 +64,13 @@ const galleryThumb = byName(
 // ---------- 메타 ----------
 document.title = c.meta.title;
 
+// ---------- 맞물린 두 반지 (봉투 실링·인사말 끝 장식) ----------
+const rings = (cls = '') => `<svg class="rings ${cls}" viewBox="0 0 64 44" aria-hidden="true">
+  <circle class="rg rg-l" cx="25" cy="27" r="12.5" pathLength="1"/>
+  <circle class="rg rg-r" cx="39" cy="27" r="12.5" pathLength="1"/>
+  <path class="rg-gem" d="M35.5 10.5 39 6l3.5 4.5L39 14Z"/>
+</svg>`;
+
 // ---------- 편지 봉투: 맨 위에서는 열리고, 맨 아래에서는 닫혀 봉해짐 ----------
 // 쌓는 순서: 뒷면 → (열린 덮개) → 카드 → 앞 주머니 → (닫힌 덮개) → 실링
 const envelope = (cls, card, front = '') => `<div class="env ${cls}" aria-hidden="true">
@@ -71,7 +78,7 @@ const envelope = (cls, card, front = '') => `<div class="env ${cls}" aria-hidden
   <div class="env-card">${card}</div>
   <div class="env-front">${front}</div>
   <div class="env-flap"></div>
-  <div class="env-seal">${esc(fx.monogram || 'J&J')}</div>
+  <div class="env-seal">${rings()}</div>
 </div>`;
 
 // ---------- 첫 화면 사진 아래 쌓인 눈 (뒤·앞 두 겹의 눈 언덕 + 반짝임) ----------
@@ -91,7 +98,7 @@ function seal(cls) {
   return `<svg class="seal ${cls}" viewBox="0 0 120 120" aria-hidden="true">
     <circle class="ring-dot" cx="60" cy="60" r="54" stroke-dasharray="1 5" stroke-linecap="round"/>
     <circle class="ring" cx="60" cy="60" r="46" pathLength="1" transform="rotate(-90 60 60)"/>
-    <text x="60" y="62" text-anchor="middle" dominant-baseline="middle">${esc(fx.monogram || `${c.groom.englishName[0]}&${c.bride.englishName[0]}`)}</text>
+    <text x="60" y="62" text-anchor="middle" dominant-baseline="middle">${esc(`${c.groom.englishName[0]}&${c.bride.englishName[0]}`)}</text>
   </svg>`;
 }
 
@@ -186,7 +193,7 @@ $('#app').innerHTML = `
       <div><span class="pa">${esc(c.bride.father)} · ${esc(c.bride.mother)}</span><span class="rel">의 ${esc(c.bride.relation.trim())}</span><b>${esc(c.bride.name)}</b></div>
     </div>
     ${heartLine()}
-    <div class="wax" aria-hidden="true"><span>${esc(fx.monogram || 'J&J')}</span></div>
+    <div class="wax" aria-hidden="true">${rings()}<i></i><i></i><i></i></div>
   </section>
 
   ${
@@ -352,6 +359,7 @@ $('#app').innerHTML = `
     <h3 id="gbTitle">축하 메시지 남기기</h3>
     <label class="fm-field"><span>이름</span><input name="name" maxlength="12" required></label>
     <label class="fm-field"><span>메시지</span><textarea name="message" maxlength="200" rows="4" required></textarea><small class="fm-count" id="gbCount">0 / 200</small></label>
+    <label class="fm-check"><input type="checkbox" name="secret"><span>비공개로 남기기 <small>신랑·신부만 볼 수 있어요</small></span></label>
     <div class="fm-btns"><button type="button" class="btn" data-close>취소</button><button type="submit" class="btn btn-main">남기기</button></div>
   </form>
 </div>
@@ -1430,37 +1438,54 @@ openStore(c.firebase).then((store) => {
 
   // ----- 방명록 -----
   const gb = modal($('#gbModal')), gForm = $('#gbForm'), list = $('#gbList'), more = $('#gbMore');
-  let all = [], shown = 0;
+  let all = [], shown = 0, next = null;
   const card = (g, i) => `<article class="gb-card${i === 0 && g.fresh ? ' fresh' : ''}" style="--i:${i % 6}">
     <p>${esc(g.message)}</p><footer><b>${esc(g.name)}</b><time>${g.createdAt.getMonth() + 1}.${g.createdAt.getDate()}</time></footer></article>`;
   const render = (n) => {
     if (!all.length) { list.innerHTML = '<p class="gb-empty">첫 번째 축하 메시지를 남겨 주세요</p>'; more.hidden = true; return; }
     shown = Math.min(all.length, n);
     list.innerHTML = all.slice(0, shown).map(card).join('');
-    more.hidden = shown >= all.length;
+    more.hidden = shown >= all.length && !next;
   };
   const load = async () => {
-    try { all = await store.listGuests(); render(6); } catch { list.innerHTML = '<p class="gb-empty">방명록을 불러오지 못했어요</p>'; }
+    try { ({ items: all, next } = await store.listGuests()); render(6); } catch { list.innerHTML = '<p class="gb-empty">방명록을 불러오지 못했어요</p>'; }
+  };
+  // 더보기: 이미 받아 둔 글을 먼저 보여 주고, 다 보여 줬을 때만 다음 묶음을 불러옴
+  const showMore = async () => {
+    if (shown >= all.length && next) {
+      more.disabled = true;
+      try {
+        const page = await store.listGuests(next);
+        const seen = new Set(all.map((g) => g.id));
+        all = all.concat(page.items.filter((g) => !seen.has(g.id)));
+        next = page.next;
+      } catch { toast('더 불러오지 못했어요'); }
+      more.disabled = false;
+    }
+    render(shown + 6);
   };
   // 방명록 섹션이 가까워졌을 때만 불러옴 (무료 사용량 아끼기)
   const io = new IntersectionObserver(([en]) => { if (en.isIntersecting) { io.disconnect(); load(); } }, { rootMargin: '400px 0px' });
   io.observe($('#gbSec'));
-  more.addEventListener('click', () => render(shown + 6));
+  more.addEventListener('click', showMore);
   $('#gbOpen').addEventListener('click', gb.show);
   gForm.message.addEventListener('input', () => { $('#gbCount').textContent = `${gForm.message.value.length} / 200`; });
   gForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = gForm.elements.name.value.trim().slice(0, 12), message = gForm.message.value.trim().slice(0, 200);
     if (!name || !message) return;
+    const secret = gForm.elements.secret.checked;
     busy(gForm, true);
     try {
-      await store.addGuest({ name, message });
+      await store.addGuest({ name, message }, secret);
       gb.close();
       gForm.reset();
       $('#gbCount').textContent = '0 / 200';
-      all.unshift({ name, message, createdAt: new Date(), fresh: true });
-      render(Math.max(6, shown + 1));
-      toast('축하 메시지를 남겼어요. 고마워요!');
+      if (!secret) {
+        all.unshift({ name, message, createdAt: new Date(), fresh: true });
+        render(Math.max(6, shown + 1));
+      }
+      toast(secret ? '신랑·신부에게만 살짝 전했어요. 고마워요!' : '축하 메시지를 남겼어요. 고마워요!');
       if (!reduceMotion) heartRain($('#gbOpen'));
     } catch {
       toast('남기지 못했어요. 잠시 후 다시 시도해 주세요');
