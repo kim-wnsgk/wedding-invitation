@@ -1429,11 +1429,56 @@ openStore(c.firebase).then((store) => {
     const close = () => { if (history.state?.fm === el.id) history.back(); else hide(); };
     window.addEventListener('popstate', hide);
     el.addEventListener('click', (e) => { if (e.target === el || e.target.closest('[data-close]')) close(); });
+    swipeClose(el, close);
     return {
       show() { el.hidden = false; document.body.style.overflow = 'hidden'; history.pushState({ fm: el.id }, ''); },
       close,
     };
   };
+  // 입력 창을 손가락으로 쓸어내리면 닫힘 (창 안을 맨 위까지 올려 둔 상태에서 아래로 끌 때만 — 내용 스크롤은 그대로)
+  function swipeClose(el, close) {
+    const box = el.querySelector('.fm-box');
+    if (!box) return;
+    box.insertAdjacentHTML('afterbegin', '<i class="fm-grip" aria-hidden="true"></i>');
+    let y0 = null, dy = 0, t0 = 0, drag = false;
+    const reset = () => { box.style.transition = ''; box.style.transform = ''; el.style.backgroundColor = ''; };
+    box.addEventListener('touchstart', (e) => {
+      y0 = e.touches.length === 1 && box.scrollTop <= 0 ? e.touches[0].clientY : null;
+      dy = 0; drag = false; t0 = performance.now();
+    }, { passive: true });
+    box.addEventListener('touchmove', (e) => {
+      if (y0 === null) return;
+      const d = e.touches[0].clientY - y0;
+      if (!drag) {
+        if (d < -4) { y0 = null; return; }  // 위로 밀면 평소처럼 스크롤
+        if (d < 8) return;
+        drag = true;
+        box.style.transition = 'none';
+        document.activeElement?.blur?.();  // 키보드가 떠 있으면 내림
+      }
+      e.preventDefault();
+      dy = Math.max(0, d);
+      box.style.transform = `translateY(${dy}px)`;
+      el.style.backgroundColor = `rgba(30,28,36,${(0.5 * Math.max(0, 1 - dy / 400)).toFixed(3)})`;
+    }, { passive: false });
+    const end = () => {
+      if (y0 === null || !drag) { y0 = null; return; }
+      y0 = null; drag = false;
+      const v = dy / Math.max(1, performance.now() - t0);
+      if (dy > 110 || (dy > 30 && v > 0.6)) {
+        box.style.transition = 'transform .22s ease-in';
+        box.style.transform = 'translateY(110%)';
+        setTimeout(() => { close(); reset(); }, 220);
+      } else {
+        box.style.transition = 'transform .25s cubic-bezier(.2,.8,.2,1)';
+        box.style.transform = '';
+        el.style.backgroundColor = '';
+        setTimeout(reset, 260);
+      }
+    };
+    box.addEventListener('touchend', end);
+    box.addEventListener('touchcancel', end);
+  }
   const busy = (form, on) => { const b = form.querySelector('[type=submit]'); b.disabled = on; b.classList.toggle('loading', on); };
 
   // ----- 참석 여부 -----

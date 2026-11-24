@@ -867,3 +867,7 @@ h2.type{filter:none!important;transform:none!important}
 
 /* 장식이 화면 옆으로 삐져나가도 페이지 폭이 넓어지지 않게 (휴대폰이 화면을 축소·확대하는 것 방지) */
 html,body{overflow-x:clip}
+
+/* 입력 창 위쪽 손잡이 (쓸어내리면 닫힘) */
+.fm-box{overscroll-behavior:contain}
+.fm-grip{display:block;width:40px;height:4px;margin:-10px auto 14px;border-radius:2px;background:#DDD7CF}
