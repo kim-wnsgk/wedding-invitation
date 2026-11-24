@@ -230,7 +230,7 @@ $('#app').innerHTML = `
     ${clockFace()}
   </section>
 
-  <section class="rv">
+  <section class="rv" id="location">
     ${frostCorner('fc-tl')}${frostCorner('fc-br')}
     ${pressed('sprig', 'pf-tl3', 16)}
     <div class="eyebrow">Location</div>
@@ -1294,6 +1294,16 @@ $('#copyLink').addEventListener('click', (e) => { heartRain(e.currentTarget); co
     try { await navigator.share({ files: [new File([blob], fileName, { type: 'image/jpeg' })], title: c.meta.title }); } catch { /* 취소 */ }
   });
 })();
+// 주소 끝이 #location 이면(카카오톡 카드의 '위치 보기') 오프닝이 끝난 뒤 오시는 길로 이동
+if (location.hash === '#location') {
+  let tries = 0;
+  const go = () => {
+    if (document.documentElement.classList.contains('intro-on') && tries++ < 40) { setTimeout(go, 250); return; }
+    $('#location')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+  };
+  setTimeout(go, 300);
+}
+
 // 공유하기: ① 카카오톡 공유(앱 키가 있을 때) → ② 휴대폰 공유창 → ③ 링크 복사
 // 카카오톡 안에서 열린 청첩장은 휴대폰 공유창을 지원하지 않아서 ①이 필요합니다.
 const kakaoKey = c.kakao?.jsKey;
@@ -1309,11 +1319,15 @@ function kakaoShare(url) {
   const K = window.Kakao;
   if (!K?.isInitialized()) return false;
   const link = { mobileWebUrl: url, webUrl: url };
-  const buttons = [{ title: '청첩장 보기', link }];
+  // 카카오톡 카드의 버튼은 카카오에 등록한 도메인으로만 연결돼서, '위치 보기'는 청첩장의 오시는 길로 바로 이동
+  const loc = { mobileWebUrl: `${url}#location`, webUrl: `${url}#location` };
+  const buttons = [{ title: '청첩장 보기', link }, { title: '위치 보기', link: loc }];
   if (mainPhoto) {
+    // 빌드 때 만든 가로 사진(og-image.jpg, 1200×630)이 카카오톡 카드에 가장 예쁘게 나옴
+    const ogImage = new URL('og-image.jpg', c.siteUrl || url).href;
     K.Share.sendDefault({
       objectType: 'feed',
-      content: { title: c.meta.title, description: c.meta.description, imageUrl: new URL(mainPhoto, location.href).href, link },
+      content: { title: c.meta.title, description: c.meta.description, imageUrl: ogImage, imageWidth: 1200, imageHeight: 630, link },
       buttons,
     });
   } else {
@@ -1408,6 +1422,39 @@ openStore(c.firebase).then((store) => {
   // ----- 참석 여부 -----
   const rsvp = modal($('#rsvpModal')), rForm = $('#rsvpForm');
   $('#rsvpOpen').addEventListener('click', rsvp.show);
+
+  // 참석 여부 안내 카드: 예식 전, 이 기기에서 아직 답하지 않았고 '나중에'도 누르지 않았을 때 한 번만
+  const NUDGE_DONE = 'rsvp-done', NUDGE_SEEN = 'rsvp-nudge-seen';
+  const has = (k) => { try { return !!localStorage.getItem(k); } catch { return false; } };
+  const mark = (k) => { try { localStorage.setItem(k, '1'); } catch { /* 저장 불가 */ } };
+  if (has(NUDGE_DONE)) $('#rsvpOpen').textContent = '참석 여부 다시 전달하기';
+  let nudge = null;
+  if (mode === 'before' && !has(NUDGE_DONE) && !has(NUDGE_SEEN)) {
+    const showNudge = () => {
+      // 오프닝 중이거나 다른 창이 열려 있으면 조금 뒤에 다시
+      if (document.documentElement.classList.contains('intro-on') || document.body.style.overflow === 'hidden') { setTimeout(showNudge, 3000); return; }
+      nudge = document.createElement('div');
+      nudge.className = 'rsvp-nudge';
+      nudge.setAttribute('role', 'dialog');
+      nudge.setAttribute('aria-label', '참석 여부 안내');
+      nudge.innerHTML = `<p><b>참석 여부를 알려 주시겠어요?</b><span>미리 알려 주시면 정성껏 준비하겠습니다</span></p>
+        <div><button type="button" class="btn" data-later>나중에</button><button type="button" class="btn btn-main" data-go>알려드릴게요</button></div>`;
+      document.body.appendChild(nudge);
+      requestAnimationFrame(() => nudge.classList.add('in'));
+      const close = () => { mark(NUDGE_SEEN); nudge.classList.remove('in'); setTimeout(() => nudge?.remove(), 400); };
+      nudge.querySelector('[data-later]').onclick = close;
+      nudge.querySelector('[data-go]').onclick = () => { close(); rsvp.show(); };
+    };
+    // 첫 화면을 지나 인사말까지 읽었을 즈음(화면 1.5배 스크롤) 또는 20초 뒤
+    let timer = setTimeout(start, 20000);
+    function start() {
+      clearTimeout(timer);
+      removeEventListener('scroll', onScroll);
+      setTimeout(showNudge, 1200);
+    }
+    const onScroll = () => { if (scrollY > innerHeight * 1.5) start(); };
+    addEventListener('scroll', onScroll, { passive: true });
+  }
   const syncAttend = () => { rForm.querySelector('.fm-attend').hidden = rForm.attend.value !== 'yes'; };
   rForm.addEventListener('change', syncAttend);
   syncAttend();
@@ -1430,6 +1477,8 @@ openStore(c.firebase).then((store) => {
       toast(attend ? '참석 여부를 전달했어요. 그날 뵐게요!' : '따뜻한 마음 감사합니다');
       if (!reduceMotion) heartRain($('#rsvpOpen'));
       $('#rsvpOpen').textContent = '참석 여부 다시 전달하기';
+      mark(NUDGE_DONE);
+      nudge?.remove();
     } catch {
       toast('전달하지 못했어요. 잠시 후 다시 시도해 주세요');
     }

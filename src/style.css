@@ -818,3 +818,15 @@ h2.type{filter:none!important;transform:none!important}
 .fm-attend[hidden]{display:none}
 .fm-btns{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:6px}
 .fm-btns .btn{padding:12px}
+
+/* ---------- 참석 여부 안내 카드 (아래에서 살짝 올라옴) ---------- */
+.rsvp-nudge{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:80;width:min(400px,calc(100% - 32px));
+  padding:16px 18px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);
+  box-shadow:0 10px 30px rgba(46,43,56,.16);transform:translate(-50%,130%);opacity:0;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s ease}
+.rsvp-nudge.in{transform:translate(-50%,0);opacity:1}
+.rsvp-nudge p{margin:0 0 12px;text-align:center;line-height:1.5}
+.rsvp-nudge b{display:block;font-size:15px}
+.rsvp-nudge span{font-size:13px;color:var(--muted)}
+.rsvp-nudge div{display:flex;gap:8px}
+.rsvp-nudge .btn{flex:1;margin:0}
+@media (prefers-reduced-motion:reduce){.rsvp-nudge{transition:none}}
