@@ -238,6 +238,8 @@ export function initNap(reduceMotion, idleMs = 5000) {
     timer = setTimeout(sleep, idleMs);
   };
   const sleep = () => {
+    // 사진 크게 보기나 입력 창이 열려 있으면 낮잠은 건너뜀 (화면을 덮고 있어서 보이지도 않음)
+    if (document.body.style.overflow === 'hidden') { timer = setTimeout(sleep, idleMs); return; }
     root.classList.add('yawning');
     setTimeout(() => {
       if (!root.classList.contains('yawning')) return;
@@ -251,7 +253,8 @@ export function initNap(reduceMotion, idleMs = 5000) {
         z.className = 'zz';
         z.setAttribute('aria-hidden', 'true');
         z.innerHTML = 'z<b>z</b><i>z</i>';
-        z.style.left = `${r.right - r.width * 0.25 + window.scrollX}px`;
+        // 화면 오른쪽 밖으로 나가면 페이지 폭이 넓어져 휴대폰이 화면을 줄여 버리므로 안쪽으로 맞춤
+        z.style.left = `${Math.min(r.right - r.width * 0.25, document.documentElement.clientWidth - 28) + window.scrollX}px`;
         z.style.top = `${r.top + window.scrollY}px`;
         document.body.appendChild(z);
         zz.push(z);

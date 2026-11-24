@@ -864,3 +864,6 @@ h2.type{filter:none!important;transform:none!important}
   .cr-roll,.credits.in .cr-roll{transform:none;animation:none}
   #ddayNum.tear,.gb-card.land{animation:none}
 }
+
+/* 장식이 화면 옆으로 삐져나가도 페이지 폭이 넓어지지 않게 (휴대폰이 화면을 축소·확대하는 것 방지) */
+html,body{overflow-x:clip}
