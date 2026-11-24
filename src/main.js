@@ -4,7 +4,7 @@ import { groom, bride, cat } from './characters.js';
 import { makeInvitationImage } from './saveImage.js';
 import { renderMusicBox } from './musicbox.js';
 import { openStore } from './guestbook.js';
-import { timeHello, ribbon, heartLine, mapPin, clockFace, setClock, initLanterns, heartBurst, heartRain, flyEnvelope, bells, initPeekCats } from './extras.js';
+import { timeHello, ribbon, heartLine, mapPin, clockFace, setClock, initLanterns, heartBurst, heartRain, flyEnvelope, bells, initPeekCats, goldConfetti, paperPlane } from './extras.js';
 import { getMode, setSky, initCatPoke, pawStamp, lights, vehicle, frostCorner, initTitleSnow, initEyes, constellation, pressed, typeOut, initNap } from './effects.js';
 
 // ---------- 유틸 ----------
@@ -301,6 +301,19 @@ $('#app').innerHTML = `
     </div>
     <div class="sign">${esc(c.groom.englishName)} &amp; ${esc(c.bride.englishName)}</div>
     ${esc(c.closing)}
+    <div class="credits" aria-label="엔딩 크레딧">
+      <div class="cr-roll">
+        <p class="cr-title">The Wedding of</p>
+        <p><small>Groom</small>${esc(c.groom.name)}</p>
+        <p><small>Bride</small>${esc(c.bride.name)}</p>
+        <p><small>신랑 측 혼주</small>${esc(c.groom.father)} · ${esc(c.groom.mother)}</p>
+        <p><small>신부 측 혼주</small>${esc(c.bride.father)} · ${esc(c.bride.mother)}</p>
+        <p><small>Date</small>${esc(dateKo)}</p>
+        <p><small>Place</small>${esc(c.venue.name)}</p>
+        <p><small>Special Thanks</small>함께해 주신 모든 분들</p>
+        <p class="cr-end">♥</p>
+      </div>
+    </div>
     <div class="share-row">
       <button class="link-btn" type="button" id="share">공유하기</button>
       <button class="link-btn" type="button" id="copyLink">링크 복사</button>
@@ -508,7 +521,7 @@ const REVEAL = [
       if (delay) el.style.setProperty('--d', `${delay(i)}ms`);
     })
   );
-  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, .lights, .frost-corner, .pressed, .wax, .map-wrap, section:not(.hero)');
+  const els = document.querySelectorAll('.a, .cal, .seal-foot, .env-close, .lights, .frost-corner, .pressed, .wax, .map-wrap, .credits, section:not(.hero)');
   if (reduceMotion || !('IntersectionObserver' in window)) {
     els.forEach((el) => el.classList.add('in'));
     return;
@@ -548,19 +561,23 @@ const REVEAL = [
   new IntersectionObserver(([e]) => hero.classList.toggle('play', e.isIntersecting)).observe(hero);
 })();
 
-// D-day 숫자가 0부터 빠르게 올라감
+// D-day 숫자가 탁상 달력처럼 한 장씩 넘어가며 오늘 날짜까지 (처음엔 빠르게, 끝에서 천천히)
 function countUpDday() {
   const el = $('#ddayNum');
   if (!el || !daysLeft || ddayCounting) return;
   ddayCounting = true;
-  const t0 = performance.now(), dur = 900;
-  const step = (t) => {
-    const p = Math.min((t - t0) / dur, 1);
-    el.textContent = `${Math.round(daysLeft * (1 - Math.pow(1 - p, 3)))}일`;
-    if (p < 1) requestAnimationFrame(step);
+  const pages = Math.min(7, daysLeft + 6);
+  let n = daysLeft + pages;
+  const turn = () => {
+    n -= 1;
+    el.textContent = `${n}일`;
+    el.classList.remove('tear');
+    void el.offsetWidth;
+    el.classList.add('tear');
+    if (n > daysLeft) setTimeout(turn, 90 + (pages - (n - daysLeft)) * 35);
     else ddayCounting = false;
   };
-  requestAnimationFrame(step);
+  turn();
 }
 
 // ---------- 맨 위 스크롤 막대: 신랑(왼쪽)과 신부(오른쪽)가 고양이와 함께 걸어와 맨 끝에서 만남  ----------
@@ -1437,14 +1454,53 @@ openStore(c.firebase).then((store) => {
       nudge.className = 'rsvp-nudge';
       nudge.setAttribute('role', 'dialog');
       nudge.setAttribute('aria-label', '참석 여부 안내');
-      nudge.innerHTML = `<p><b>참석 여부를 알려 주시겠어요?</b><span>미리 알려 주시면 정성껏 준비하겠습니다</span></p>
+      nudge.innerHTML = `<i class="nudge-grip" aria-hidden="true"></i><p><b>참석 여부를 알려 주시겠어요?</b><span>미리 알려 주시면 정성껏 준비하겠습니다</span></p>
         <div><button type="button" class="btn" data-later>나중에</button><button type="button" class="btn btn-main" data-go>알려드릴게요</button></div>`;
       document.body.appendChild(nudge);
       requestAnimationFrame(() => nudge.classList.add('in'));
       const close = () => { mark(NUDGE_SEEN); nudge.classList.remove('in'); setTimeout(() => nudge?.remove(), 400); };
       nudge.querySelector('[data-later]').onclick = close;
       nudge.querySelector('[data-go]').onclick = () => { close(); rsvp.show(); };
+      swipeDown(nudge, close);
     };
+    // 손가락으로 쓸어내리면 닫기 (위로는 살짝만 끌려 오고, 조금 내리다 놓으면 제자리로)
+    function swipeDown(el, onClose) {
+      let y0 = 0, t0 = 0, dy = 0, id = null, dragging = false, moved = false;
+      const set = (v) => {
+        el.style.transform = `translate(-50%, ${v}px)`;
+        el.style.opacity = String(Math.max(0, 1 - Math.max(v, 0) / 220));
+      };
+      el.addEventListener('pointerdown', (e) => {
+        if (e.button > 0) return;
+        id = e.pointerId; y0 = e.clientY; t0 = performance.now(); dy = 0; dragging = false; moved = false;
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== id) return;
+        const d = e.clientY - y0;
+        if (!dragging) {
+          if (Math.abs(d) < 6) return;
+          dragging = moved = true;
+          try { el.setPointerCapture(id); } catch {}
+          el.classList.add('drag');
+        }
+        dy = d > 0 ? d : d / 4; // 위로는 저항
+        set(dy);
+      });
+      const end = (e) => {
+        if (e.pointerId !== id) return;
+        id = null;
+        if (!dragging) return;
+        dragging = false;
+        el.classList.remove('drag');
+        const v = dy / Math.max(1, performance.now() - t0); // px/ms
+        el.style.transform = ''; el.style.opacity = '';
+        if (dy > 70 || (dy > 20 && v > 0.5)) { el.classList.add('flick'); onClose(); }
+      };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+      // 끌다가 버튼 위에서 손을 떼도 버튼이 눌리지 않게
+      el.addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+    }
     // 첫 화면을 지나 인사말까지 읽었을 즈음(화면 1.5배 스크롤) 또는 20초 뒤
     let timer = setTimeout(start, 20000);
     function start() {
@@ -1475,7 +1531,7 @@ openStore(c.firebase).then((store) => {
       rForm.reset();
       syncAttend();
       toast(attend ? '참석 여부를 전달했어요. 그날 뵐게요!' : '따뜻한 마음 감사합니다');
-      if (!reduceMotion) heartRain($('#rsvpOpen'));
+      if (!reduceMotion) attend ? goldConfetti() : heartRain($('#rsvpOpen'));
       $('#rsvpOpen').textContent = '참석 여부 다시 전달하기';
       mark(NUDGE_DONE);
       nudge?.remove();
@@ -1530,12 +1586,16 @@ openStore(c.firebase).then((store) => {
       gb.close();
       gForm.reset();
       $('#gbCount').textContent = '0 / 200';
-      if (!secret) {
+      // 글이 종이비행기가 되어 목록 맨 위로 날아가 내려앉음 (비공개 글은 하늘 위로 날아감)
+      const add = () => {
         all.unshift({ name, message, createdAt: new Date(), fresh: true });
         render(Math.max(6, shown + 1));
-      }
+        if (!reduceMotion) list.querySelector('.gb-card')?.classList.add('land');
+      };
+      if (secret) { if (!reduceMotion) paperPlane($('#gbOpen')); }
+      else if (reduceMotion) add();
+      else paperPlane($('#gbOpen'), list).then(add);
       toast(secret ? '신랑·신부에게만 살짝 전했어요. 고마워요!' : '축하 메시지를 남겼어요. 고마워요!');
-      if (!reduceMotion) heartRain($('#gbOpen'));
     } catch {
       toast('남기지 못했어요. 잠시 후 다시 시도해 주세요');
     }

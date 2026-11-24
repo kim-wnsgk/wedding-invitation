@@ -166,3 +166,49 @@ export function initPeekCats(cat, reduceMotion) {
     }, 1200);
   }, { passive: true });
 }
+
+// ---------- 참석 여부 전달: 화면 아래 양쪽에서 금빛 꽃가루가 팡 ----------
+export function goldConfetti() {
+  const colors = ['#C9A25F', '#E2C48E', '#F1D9A6', '#E8B4BC', '#FFFFFF', '#D98C99'];
+  const W = innerWidth, H = innerHeight;
+  for (let i = 0; i < 56; i++) {
+    const left = i % 2 === 0, x = left ? 8 : W - 8;
+    const el = spot('confetti-bit', x, H + 6);
+    el.style.background = colors[i % colors.length];
+    el.style.width = `${rand(5, 9)}px`;
+    el.style.height = `${rand(9, 15)}px`;
+    if (i % 5 === 0) el.style.borderRadius = '50%';
+    const dx = (left ? 1 : -1) * rand(60, W * 0.75), up = rand(H * 0.45, H * 0.8), fall = rand(40, 200);
+    fly(el, [
+      { transform: 'translate(-50%,-50%) rotate(0) rotateY(0)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx * 0.7}px), calc(-50% - ${up}px)) rotate(${rand(-200, 200)}deg) rotateY(360deg)`, opacity: 1, offset: 0.4 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% - ${up - fall}px)) rotate(${rand(-400, 400)}deg) rotateY(900deg)`, opacity: 0 },
+    ], { duration: rand(1800, 2600), delay: rand(0, 160), easing: 'cubic-bezier(.15,.7,.35,1)', fill: 'backwards' });
+  }
+}
+
+// ---------- 방명록: 글이 종이비행기가 되어 목록으로 날아감 (비공개는 하늘 위로) ----------
+const PLANE = '<svg viewBox="0 0 40 30"><path d="M2 14 38 2 26 28 18 18Z" fill="#fff" stroke="#C9A25F" stroke-width="1.4" stroke-linejoin="round"/><path d="M38 2 18 18 16 27 22 21" fill="#F3E6CC" stroke="#C9A25F" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+export function paperPlane(from, to) {
+  const a = from.getBoundingClientRect(), x0 = a.left + a.width / 2, y0 = a.top + a.height / 2;
+  const el = spot('paper-plane', x0, y0, PLANE);
+  let frames;
+  if (to) {
+    const b = to.getBoundingClientRect(), dx = b.left + b.width / 2 - x0, dy = b.top + 24 - y0;
+    frames = [
+      { transform: 'translate(-50%,-50%) scale(.3) rotate(0)', opacity: 0 },
+      { transform: 'translate(-50%,-50%) scale(1) rotate(-20deg)', opacity: 1, offset: 0.12 },
+      { transform: `translate(calc(-50% + ${dx * 0.3 + 110}px), calc(-50% + ${dy * 0.45 - 40}px)) scale(1) rotate(-60deg)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(calc(-50% + ${dx * 0.6 - 90}px), calc(-50% + ${dy * 0.8}px)) scale(.9) rotate(-140deg)`, opacity: 1, offset: 0.75 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.4) rotate(-200deg)`, opacity: 0 },
+    ];
+  } else {
+    frames = [
+      { transform: 'translate(-50%,-50%) scale(.3) rotate(0)', opacity: 0 },
+      { transform: 'translate(-50%,-50%) scale(1) rotate(-20deg)', opacity: 1, offset: 0.12 },
+      { transform: `translate(calc(-50% + 90px), calc(-50% - ${y0 * 0.5}px)) scale(.9) rotate(-35deg)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(calc(-50% + 160px), calc(-50% - ${y0 + 60}px)) scale(.5) rotate(-30deg)`, opacity: 0 },
+    ];
+  }
+  return fly(el, frames, { duration: 1500, easing: 'cubic-bezier(.4,.1,.4,1)' });
+}
